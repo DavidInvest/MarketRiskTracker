@@ -9,26 +9,30 @@ class RiskCalculator:
         self.spy_ma_period = 20  # Moving average period
         
     def calculate_risk_score(self, market_data, sentiment_data):
-        """Calculate comprehensive risk score"""
+        """Calculate comprehensive risk score using enhanced data sources"""
         try:
-            # VIX component (40% weight)
+            # Core risk components
             vix_score = self._calculate_vix_score(market_data.get('vix', 20))
-            
-            # Sentiment component (30% weight)
             sentiment_score = self._calculate_sentiment_score(sentiment_data)
-            
-            # Dollar strength component (20% weight)
             dxy_score = self._calculate_dxy_score(market_data.get('dxy', 100))
-            
-            # Market momentum component (10% weight)
             momentum_score = self._calculate_momentum_score(market_data.get('spy', 440))
             
-            # Weighted combination
+            # Enhanced risk components from comprehensive data
+            credit_score = self._calculate_credit_risk_score(market_data)
+            yield_curve_score = self._calculate_yield_curve_score(market_data)
+            options_score = self._calculate_options_risk_score(market_data)
+            economic_score = self._calculate_economic_risk_score(market_data)
+            
+            # Enhanced weighted combination
             raw_score = (
-                vix_score * 0.4 +
-                sentiment_score * 0.3 +
-                dxy_score * 0.2 +
-                momentum_score * 0.1
+                vix_score * 0.20 +           # VIX gets 20% weight
+                sentiment_score * 0.15 +     # Sentiment gets 15% weight
+                dxy_score * 0.15 +          # Dollar strength gets 15% weight
+                momentum_score * 0.15 +      # Momentum gets 15% weight
+                credit_score * 0.15 +        # Credit spreads get 15% weight
+                yield_curve_score * 0.10 +   # Yield curve gets 10% weight
+                options_score * 0.05 +       # Options flow gets 5% weight
+                economic_score * 0.05        # Economic indicators get 5% weight
             )
             
             # Normalize to 0-100 scale
@@ -37,7 +41,7 @@ class RiskCalculator:
             # Determine risk level
             level = self._determine_risk_level(score)
             
-            logging.info(f"Risk calculation: VIX={vix_score:.2f}, Sentiment={sentiment_score:.2f}, DXY={dxy_score:.2f}, Momentum={momentum_score:.2f}, Final={score:.2f}")
+            logging.info(f"Enhanced risk calculation: VIX={vix_score:.2f}, Sentiment={sentiment_score:.2f}, DXY={dxy_score:.2f}, Momentum={momentum_score:.2f}, Credit={credit_score:.2f}, YieldCurve={yield_curve_score:.2f}, Final={score:.2f}")
             
             return {
                 'value': round(score, 2),
@@ -46,7 +50,11 @@ class RiskCalculator:
                     'vix': round(vix_score, 2),
                     'sentiment': round(sentiment_score, 2),
                     'dxy': round(dxy_score, 2),
-                    'momentum': round(momentum_score, 2)
+                    'momentum': round(momentum_score, 2),
+                    'credit': round(credit_score, 2),
+                    'yield_curve': round(yield_curve_score, 2),
+                    'options': round(options_score, 2),
+                    'economic': round(economic_score, 2)
                 },
                 'timestamp': datetime.utcnow().isoformat()
             }
@@ -162,3 +170,156 @@ class RiskCalculator:
         except Exception as e:
             logging.error(f"Error calculating portfolio risk: {e}")
             return {'portfolio_risk': market_risk_score, 'market_risk': market_risk_score}
+    
+    def _calculate_credit_risk_score(self, market_data):
+        """Calculate credit risk score from spreads and bond ETFs"""
+        try:
+            # Get credit spread data from FRED
+            credit_spread = market_data.get('credit_spread', 200)  # Default to 200bps
+            
+            # Get bond ETF data
+            hyg_price = market_data.get('hyg', 80)  # High yield corporate bonds
+            lqd_price = market_data.get('lqd', 120)  # Investment grade corporate bonds
+            tlt_price = market_data.get('tlt', 90)   # Long-term treasuries
+            
+            # Calculate credit stress from spread
+            if credit_spread > 500:
+                spread_score = 80
+            elif credit_spread > 350:
+                spread_score = 60
+            elif credit_spread > 250:
+                spread_score = 40
+            else:
+                spread_score = 20
+            
+            # Calculate bond performance stress
+            bond_stress = 0
+            if hyg_price and lqd_price and tlt_price:
+                # High yield underperformance vs treasuries indicates credit stress
+                hy_vs_treasury = (hyg_price / tlt_price) * 100
+                if hy_vs_treasury < 85:
+                    bond_stress = 30
+                elif hy_vs_treasury < 90:
+                    bond_stress = 20
+                else:
+                    bond_stress = 10
+            
+            return min(100, spread_score + bond_stress)
+            
+        except Exception as e:
+            logging.error(f"Error calculating credit risk: {e}")
+            return 25
+    
+    def _calculate_yield_curve_score(self, market_data):
+        """Calculate yield curve risk score"""
+        try:
+            # Get yield curve data
+            three_month = market_data.get('three_month', 5.0)
+            two_year = market_data.get('two_year', 4.5)
+            ten_year = market_data.get('ten_year', 4.2)
+            thirty_year = market_data.get('thirty_year', 4.4)
+            
+            # Calculate curve slope (10Y - 2Y)
+            curve_slope = ten_year - two_year
+            
+            # Calculate inversion risk
+            if curve_slope < -0.5:
+                inversion_score = 80  # Deeply inverted
+            elif curve_slope < -0.1:
+                inversion_score = 60  # Inverted
+            elif curve_slope < 0.5:
+                inversion_score = 40  # Flat
+            else:
+                inversion_score = 20  # Normal
+            
+            # Calculate absolute yield level risk
+            if ten_year > 6.0:
+                yield_level_score = 60  # Very high rates
+            elif ten_year > 5.0:
+                yield_level_score = 40  # High rates
+            elif ten_year < 2.0:
+                yield_level_score = 30  # Very low rates
+            else:
+                yield_level_score = 10  # Normal rates
+            
+            return min(100, (inversion_score * 0.7) + (yield_level_score * 0.3))
+            
+        except Exception as e:
+            logging.error(f"Error calculating yield curve risk: {e}")
+            return 25
+    
+    def _calculate_options_risk_score(self, market_data):
+        """Calculate options market risk score"""
+        try:
+            # Get options data
+            put_call_ratio = market_data.get('put_call_ratio', 0.8)
+            vix_skew = market_data.get('skew', 0.05)
+            
+            # Analyze put/call ratio
+            if put_call_ratio > 1.5:
+                pc_score = 70  # Excessive fear
+            elif put_call_ratio > 1.2:
+                pc_score = 50  # High fear
+            elif put_call_ratio < 0.5:
+                pc_score = 60  # Excessive complacency
+            else:
+                pc_score = 20  # Normal
+            
+            # Analyze skew
+            if vix_skew and vix_skew > 0.1:
+                skew_score = 40  # High skew indicates fear
+            elif vix_skew and vix_skew < -0.05:
+                skew_score = 30  # Negative skew unusual
+            else:
+                skew_score = 10  # Normal skew
+            
+            return min(100, (pc_score * 0.6) + (skew_score * 0.4))
+            
+        except Exception as e:
+            logging.error(f"Error calculating options risk: {e}")
+            return 25
+    
+    def _calculate_economic_risk_score(self, market_data):
+        """Calculate economic indicators risk score"""
+        try:
+            # Get economic data
+            unemployment = market_data.get('unemployment', 4.0)
+            cpi = market_data.get('cpi', 3.0)
+            consumer_confidence = market_data.get('consumer_confidence', 100)
+            fed_funds_rate = market_data.get('fed_funds_rate', 5.0)
+            
+            risk_score = 0
+            
+            # Unemployment risk
+            if unemployment > 6.0:
+                risk_score += 30
+            elif unemployment > 4.5:
+                risk_score += 15
+            elif unemployment < 3.5:
+                risk_score += 10  # Too low can indicate overheating
+            
+            # Inflation risk
+            if cpi > 5.0:
+                risk_score += 25
+            elif cpi > 3.5:
+                risk_score += 15
+            elif cpi < 1.0:
+                risk_score += 20  # Deflation risk
+            
+            # Consumer confidence
+            if consumer_confidence < 80:
+                risk_score += 20
+            elif consumer_confidence > 130:
+                risk_score += 10  # Excessive optimism
+            
+            # Fed funds rate
+            if fed_funds_rate > 6.0:
+                risk_score += 15  # Very restrictive
+            elif fed_funds_rate < 1.0:
+                risk_score += 10  # Very accommodative
+            
+            return min(100, risk_score)
+            
+        except Exception as e:
+            logging.error(f"Error calculating economic risk: {e}")
+            return 25
