@@ -249,3 +249,51 @@ def handle_update_request():
     except Exception as e:
         logging.error(f"Error sending update: {e}")
         emit('error', {'message': str(e)})
+
+@app.route('/api/train_advanced_ml', methods=['POST'])
+def train_advanced_ml():
+    """API endpoint to train advanced ML models"""
+    try:
+        from services.ml_risk_scorer import MLRiskScorer
+        import pandas as pd
+        
+        ml_scorer = MLRiskScorer()
+        
+        # Get historical data for training
+        historical_scores = RiskScore.query.order_by(RiskScore.timestamp.desc()).limit(1000).all()
+        
+        if len(historical_scores) < 10:
+            # Generate synthetic training data if insufficient real data
+            logging.info("Insufficient historical data, generating synthetic training data")
+            training_data = ml_scorer._generate_synthetic_training_data(500)
+        else:
+            # Convert historical scores to training format
+            training_data = []
+            for score in historical_scores:
+                training_data.append({
+                    'market_data': score.market_data or {},
+                    'sentiment_data': score.sentiment_data or {},
+                    'risk_score': score.score,
+                    'timestamp': score.timestamp
+                })
+            training_data = pd.DataFrame(training_data)
+        
+        # Train the models
+        success = ml_scorer.train_models(training_data)
+        
+        if success:
+            performance = ml_scorer.get_model_performance()
+            feature_importance = ml_scorer.get_feature_importance()
+            
+            return jsonify({
+                'success': True, 
+                'message': 'Advanced ML models trained successfully',
+                'performance': performance,
+                'feature_importance': feature_importance
+            })
+        else:
+            return jsonify({'success': False, 'error': 'Training failed'})
+            
+    except Exception as e:
+        logging.error(f"Error training advanced ML models: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500

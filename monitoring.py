@@ -6,6 +6,7 @@ from app import app, db, socketio
 from models import RiskScore, SystemLog
 from services.data_collector import DataCollector
 from services.risk_calculator import RiskCalculator
+from services.ml_risk_scorer import MLRiskScorer
 from services.alert_system import AlertSystem
 from services.disaster_recovery import DisasterRecoveryManager
 from services.llm_risk_analyzer import LLMRiskAnalyzer
@@ -33,15 +34,30 @@ def run_monitoring_cycle():
             dr_manager = DisasterRecoveryManager()
             collector = DataCollector(dr_manager)
             calculator = RiskCalculator()
+            ml_scorer = MLRiskScorer()
             alerter = AlertSystem()
             llm_analyzer = LLMRiskAnalyzer()
+            
+            # Load existing ML models or train new ones
+            if not ml_scorer.load_models():
+                logging.info("Training initial ML models...")
             
             # Collect data
             market_data = collector.collect_market_data()
             sentiment_data = collector.collect_sentiment_data()
             
-            # Calculate risk score
-            risk_score = calculator.calculate_risk_score(market_data, sentiment_data)
+            # Calculate enhanced risk score with ML
+            basic_risk_score = calculator.calculate_risk_score(market_data, sentiment_data)
+            ml_predictions = ml_scorer.predict_market_risks(market_data, sentiment_data)
+            
+            # Combine basic and ML scores (weighted approach)
+            combined_score = (basic_risk_score['value'] * 0.6) + (ml_predictions['ml_risk_score'] * 0.4)
+            risk_score = {
+                'value': combined_score,
+                'level': basic_risk_score['level'],
+                'components': basic_risk_score.get('components', {}),
+                'ml_predictions': ml_predictions
+            }
             
             # Generate LLM-powered risk analysis
             risk_components = risk_score.get('components', {})

@@ -30,6 +30,12 @@ Preferred communication style: Simple, everyday language.
 - ✅ **Implemented comprehensive risk insights with actionable recommendations**
 - ✅ **Enhanced dashboard with AI Risk Analysis section showing market narrative, key concerns, and probability scenarios**
 - ✅ **Upgraded alert system with LLM insights for contextualized risk notifications**
+- ✅ **MAJOR: Implemented advanced machine learning-based risk scoring system with sophisticated feature engineering**
+- ✅ **Created MLRiskScorer with 25+ technical indicators, sentiment analysis, and macro features**
+- ✅ **Added multi-horizon crash prediction models (1d, 3d, 7d, 14d, 30d)**
+- ✅ **Integrated Random Forest, Gradient Boosting, and Neural Network algorithms with automatic model selection**
+- ✅ **Enhanced monitoring system to combine basic risk scoring (60%) with ML predictions (40%)**
+- ✅ **Added advanced ML training API endpoint for continuous model improvement**
 
 ## System Architecture
 
