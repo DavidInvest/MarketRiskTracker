@@ -371,9 +371,16 @@ class DataCollector:
                 
                 sentiment_scores = []
                 for article in articles:
-                    title = article.get('title', '').lower()
-                    description = article.get('description', '').lower()
-                    text = f"{title} {description}"
+                    # Handle None values properly
+                    title = article.get('title')
+                    description = article.get('description')
+                    
+                    # Skip if both title and description are None
+                    if not title and not description:
+                        continue
+                    
+                    # Create text string with proper None handling
+                    text = f"{title or ''} {description or ''}".lower()
                     
                     score = 0
                     if any(word in text for word in ['bull', 'up', 'gain', 'profit', 'rise']):
