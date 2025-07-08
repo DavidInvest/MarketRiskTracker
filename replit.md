@@ -36,6 +36,9 @@ Preferred communication style: Simple, everyday language.
 - ✅ **Integrated Random Forest, Gradient Boosting, and Neural Network algorithms with automatic model selection**
 - ✅ **Enhanced monitoring system to combine basic risk scoring (60%) with ML predictions (40%)**
 - ✅ **Added advanced ML training API endpoint for continuous model improvement**
+- ✅ **Integrated FRED API for real-time economic indicators in ML feature engineering**
+- ✅ **Fixed ML prediction display system to show actual multi-horizon crash probabilities**
+- ✅ **Enhanced dashboard with comprehensive ML metrics (1d, 7d, 30d predictions + ML risk score)**
 
 ## System Architecture
 

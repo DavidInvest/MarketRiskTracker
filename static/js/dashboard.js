@@ -259,8 +259,7 @@ function getMlPrediction(riskScore, marketData, sentimentData) {
             document.getElementById('crash-probability').textContent = crashProb1d + '%';
             document.getElementById('crash-progress').style.width = crashProb1d + '%';
             
-            // Update any additional ML displays that might exist
-            updateMLDisplay('crash-1d', crashProb1d + '%');
+            // Update additional ML displays using correct selectors
             updateMLDisplay('crash-7d', (predictions.crash_probability_7d * 100).toFixed(1) + '%');
             updateMLDisplay('crash-30d', (predictions.crash_probability_30d * 100).toFixed(1) + '%');
             updateMLDisplay('ml-risk', predictions.ml_risk_score.toFixed(1));
