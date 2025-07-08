@@ -162,6 +162,22 @@ def quick_data():
             twitter_sentiment = sentiment_data.get('twitter', 0)
             news_sentiment = sentiment_data.get('news', 0)
             
+            # Generate LLM analysis for cached data too
+            llm_analysis = None
+            try:
+                from services.llm_risk_analyzer import LLMRiskAnalyzer
+                llm_analyzer = LLMRiskAnalyzer()
+                risk_components = {
+                    'vix': (vix_value - 10) * 2,  # Approximate VIX scoring
+                    'sentiment': 50,  # Neutral baseline
+                    'dxy': (dxy_value - 95) * 5,  # Approximate DXY scoring
+                    'spy': max(0, 100 - (spy_value / 6))  # Approximate SPY momentum
+                }
+                llm_analysis = llm_analyzer.analyze_market_risks(market_data, sentiment_data, risk_components)
+            except Exception as e:
+                logging.error(f"LLM analysis failed for cached data: {e}")
+                llm_analysis = None
+            
             response = {
                 'success': True,
                 'risk_score': {
@@ -180,6 +196,7 @@ def quick_data():
                     'twitter': float(twitter_sentiment),
                     'news': float(news_sentiment)
                 },
+                'llm_analysis': llm_analysis,
                 'timestamp': latest_score.timestamp.isoformat(),
                 'source': 'database'
             }
