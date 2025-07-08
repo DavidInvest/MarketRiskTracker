@@ -183,6 +183,11 @@ class DataCollector:
     def _get_newsapi_sentiment(self):
         """Get sentiment from NewsAPI"""
         try:
+            # Check if API key format is correct (NewsAPI keys are 32 characters, not OpenAI format)
+            if not self.newsapi_key or self.newsapi_key.startswith('sk-'):
+                logging.warning("NewsAPI key appears to be in wrong format. Please get a proper key from newsapi.org")
+                return 0.0
+                
             url = f"https://newsapi.org/v2/everything?q=stock market OR SPY OR VIX&apiKey={self.newsapi_key}&sortBy=publishedAt&pageSize=10"
             response = requests.get(url)
             
