@@ -7,9 +7,9 @@ from openai import OpenAI
 class LLMRiskAnalyzer:
     def __init__(self):
         self.openai_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-        # Try gpt-4o-mini first, fallback to gpt-3.5-turbo if not available
-        self.model = "gpt-4o-mini"
-        self.fallback_model = "gpt-3.5-turbo"
+        # Use available models from your OpenAI account
+        self.model = "gpt-4.1-mini"
+        self.fallback_model = "gpt-4.1-nano-2025-04-14"
         
     def analyze_market_risks(self, market_data, sentiment_data, risk_components):
         """Generate comprehensive risk analysis with actionable insights"""
@@ -60,11 +60,12 @@ class LLMRiskAnalyzer:
             except Exception as e:
                 if "model_not_found" in str(e) or "403" in str(e):
                     logging.info(f"Primary model {self.model} not available, using fallback {self.fallback_model}")
+                    # Remove response_format for fallback model compatibility
                     response = self.openai_client.chat.completions.create(
                         model=self.fallback_model,
                         messages=[
                             {"role": "system", "content": "You are a professional risk analyst providing actionable market insights. Always respond in valid JSON format."},
-                            {"role": "user", "content": prompt}
+                            {"role": "user", "content": prompt + "\n\nRespond with valid JSON only."}
                         ],
                         max_tokens=1500,
                         temperature=0.3
