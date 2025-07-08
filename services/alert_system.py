@@ -31,9 +31,11 @@ class AlertSystem:
             logging.error(f"Error sending alerts: {e}")
     
     def _format_alert_message(self, risk_score):
-        """Format alert message"""
+        """Format alert message with LLM insights"""
         components = risk_score.get('components', {})
+        llm_insights = risk_score.get('llm_insights', {})
         
+        # Base alert message
         message = f"""
 🚨 MARKET RISK ALERT 🚨
 
@@ -45,6 +47,22 @@ Risk Components:
 • Sentiment Impact: {components.get('sentiment', 'N/A')}
 • Dollar Strength: {components.get('dxy', 'N/A')}
 • Market Momentum: {components.get('momentum', 'N/A')}
+• Credit Risk: {components.get('credit', 'N/A')}
+• Yield Curve: {components.get('yield_curve', 'N/A')}
+• Options Flow: {components.get('options', 'N/A')}
+• Economic Indicators: {components.get('economic', 'N/A')}"""
+
+        # Add LLM insights if available
+        if llm_insights:
+            message += f"""
+
+🤖 AI RISK INSIGHTS:
+Alert: {llm_insights.get('alert_title', 'Risk Alert')}
+Context: {llm_insights.get('alert_message', 'Risk threshold exceeded')}
+Recommended Action: {llm_insights.get('immediate_action', 'Monitor positions closely')}
+Urgency Level: {llm_insights.get('urgency_level', 3)}/5"""
+
+        message += f"""
 
 Timestamp: {risk_score.get('timestamp', 'N/A')}
 

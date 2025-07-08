@@ -136,6 +136,7 @@ function updateRiskData(data) {
     const riskScore = data.risk_score;
     const marketData = data.market_data;
     const sentimentData = data.sentiment_data;
+    const llmAnalysis = data.llm_analysis;
     
     // Update risk score display
     document.getElementById('risk-score-value').textContent = riskScore.value;
@@ -156,6 +157,9 @@ function updateRiskData(data) {
     document.getElementById('twitter-sentiment').textContent = sentimentData.twitter.toFixed(3);
     document.getElementById('news-sentiment').textContent = sentimentData.news.toFixed(3);
     
+    // Update LLM analysis section
+    updateLLMAnalysis(llmAnalysis);
+    
     // Update components chart
     if (riskScore.components) {
         componentsChart.data.datasets[0].data = [
@@ -172,6 +176,65 @@ function updateRiskData(data) {
     
     // Get ML prediction
     getMlPrediction(riskScore, marketData, sentimentData);
+}
+
+// Update LLM analysis display
+function updateLLMAnalysis(llmAnalysis) {
+    if (!llmAnalysis) return;
+    
+    // Update risk assessment
+    const riskAssessmentEl = document.getElementById('llm-risk-assessment');
+    if (riskAssessmentEl) {
+        riskAssessmentEl.textContent = llmAnalysis.risk_assessment || 'ANALYZING...';
+        riskAssessmentEl.className = 'badge ' + getRiskProgressClass(llmAnalysis.risk_assessment);
+    }
+    
+    // Update market narrative
+    const narrativeEl = document.getElementById('llm-market-narrative');
+    if (narrativeEl) {
+        narrativeEl.textContent = llmAnalysis.market_narrative || 'Analyzing current market conditions...';
+    }
+    
+    // Update key concerns
+    const concernsEl = document.getElementById('llm-key-concerns');
+    if (concernsEl && llmAnalysis.key_concerns) {
+        concernsEl.innerHTML = llmAnalysis.key_concerns
+            .map(concern => `<li class="list-group-item">${concern}</li>`)
+            .join('');
+    }
+    
+    // Update recommendations
+    const recommendationsEl = document.getElementById('llm-recommendations');
+    if (recommendationsEl && llmAnalysis.specific_recommendations) {
+        recommendationsEl.innerHTML = llmAnalysis.specific_recommendations
+            .map(rec => `<li class="list-group-item">${rec}</li>`)
+            .join('');
+    }
+    
+    // Update watchlist
+    const watchlistEl = document.getElementById('llm-watchlist');
+    if (watchlistEl && llmAnalysis.watchlist) {
+        watchlistEl.innerHTML = llmAnalysis.watchlist
+            .map(item => `<span class="badge bg-secondary me-1">${item}</span>`)
+            .join('');
+    }
+    
+    // Update probability scenarios
+    const scenariosEl = document.getElementById('llm-scenarios');
+    if (scenariosEl && llmAnalysis.probability_scenarios) {
+        const scenarios = llmAnalysis.probability_scenarios;
+        let scenarioHtml = '';
+        for (const [scenario, probability] of Object.entries(scenarios)) {
+            const percentage = (probability * 100).toFixed(0);
+            scenarioHtml += `
+                <div class="d-flex justify-content-between">
+                    <span>${scenario.replace(/_/g, ' ')}</span>
+                    <span class="fw-bold">${percentage}%</span>
+                </div>
+            `;
+        }
+        scenariosEl.innerHTML = scenarioHtml;
+    }
 }
 
 // Get ML prediction

@@ -26,6 +26,10 @@ Preferred communication style: Simple, everyday language.
 - ✅ Integrated Federal Reserve Economic Data (FRED) API for unlimited access
 - ✅ Added options market analysis (put/call ratios, volatility skew)
 - ✅ Implemented Treasury yield curve monitoring and inversion detection
+- ✅ **Added LLM-powered risk analysis using OpenAI GPT-4o for intelligent risk interpretation**
+- ✅ **Implemented comprehensive risk insights with actionable recommendations**
+- ✅ **Enhanced dashboard with AI Risk Analysis section showing market narrative, key concerns, and probability scenarios**
+- ✅ **Upgraded alert system with LLM insights for contextualized risk notifications**
 
 ## System Architecture
 

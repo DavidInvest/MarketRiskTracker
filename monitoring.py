@@ -8,6 +8,7 @@ from services.data_collector import DataCollector
 from services.risk_calculator import RiskCalculator
 from services.alert_system import AlertSystem
 from services.disaster_recovery import DisasterRecoveryManager
+from services.llm_risk_analyzer import LLMRiskAnalyzer
 from datetime import datetime
 
 def log_system_event(level, message, component="monitoring"):
@@ -33,6 +34,7 @@ def run_monitoring_cycle():
             collector = DataCollector(dr_manager)
             calculator = RiskCalculator()
             alerter = AlertSystem()
+            llm_analyzer = LLMRiskAnalyzer()
             
             # Collect data
             market_data = collector.collect_market_data()
@@ -41,7 +43,11 @@ def run_monitoring_cycle():
             # Calculate risk score
             risk_score = calculator.calculate_risk_score(market_data, sentiment_data)
             
-            # Save to database
+            # Generate LLM-powered risk analysis
+            risk_components = risk_score.get('components', {})
+            llm_analysis = llm_analyzer.analyze_market_risks(market_data, sentiment_data, risk_components)
+            
+            # Save to database with LLM analysis
             new_score = RiskScore(
                 score=risk_score['value'],
                 level=risk_score['level'],
@@ -51,16 +57,20 @@ def run_monitoring_cycle():
             db.session.add(new_score)
             db.session.commit()
             
-            # Send alerts if threshold exceeded
+            # Send intelligent alerts with LLM insights
             if risk_score['value'] >= 40:
-                alerter.send_alert(risk_score)
-                log_system_event("WARNING", f"Risk alert sent: {risk_score['level']} ({risk_score['value']})")
+                alert_insights = llm_analyzer.generate_alert_insights(risk_score['value'], market_data, sentiment_data)
+                # Enhanced alert with LLM insights
+                enhanced_risk_score = {**risk_score, 'llm_insights': alert_insights}
+                alerter.send_alert(enhanced_risk_score)
+                log_system_event("WARNING", f"Intelligent risk alert sent: {risk_score['level']} ({risk_score['value']}) - {alert_insights.get('alert_title', 'Risk Alert')}")
             
-            # Emit real-time update via WebSocket
+            # Emit real-time update via WebSocket with LLM analysis
             socketio.emit('risk_update', {
                 'risk_score': risk_score,
                 'market_data': market_data,
                 'sentiment_data': sentiment_data,
+                'llm_analysis': llm_analysis,
                 'timestamp': datetime.utcnow().isoformat()
             })
             
