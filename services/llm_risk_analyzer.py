@@ -6,7 +6,7 @@ from openai import OpenAI
 
 class LLMRiskAnalyzer:
     def __init__(self):
-        self.client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+        self.openai_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
         # Using gpt-4o-mini as requested by user
         self.model = "gpt-4o-mini"
         
@@ -44,7 +44,7 @@ class LLMRiskAnalyzer:
             Focus on actionable insights, not just descriptions. Be specific about dollar amounts, percentages, and timeframes.
             """
             
-            response = self.client.chat.completions.create(
+            response = self.openai_client.chat.completions.create(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": "You are a professional risk analyst providing actionable market insights. Always respond in valid JSON format."},
@@ -90,7 +90,7 @@ class LLMRiskAnalyzer:
             Focus on what users should DO, not just what's happening.
             """
             
-            response = self.client.chat.completions.create(
+            response = self.openai_client.chat.completions.create(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": "You are a risk analyst creating actionable alerts. Always respond in valid JSON format."},
@@ -135,7 +135,7 @@ class LLMRiskAnalyzer:
             Be specific about percentages, strike prices, and expiration dates for options.
             """
             
-            response = self.client.chat.completions.create(
+            response = self.openai_client.chat.completions.create(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": "You are a portfolio risk analyst. Always respond in valid JSON format."},
@@ -175,7 +175,7 @@ class LLMRiskAnalyzer:
             Focus on patterns that predict future moves, not just describe current state.
             """
             
-            response = self.client.chat.completions.create(
+            response = self.openai_client.chat.completions.create(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": "You are a market pattern analyst. Always respond in valid JSON format."},

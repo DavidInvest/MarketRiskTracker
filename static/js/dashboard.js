@@ -254,6 +254,68 @@ function updateRiskData(data) {
     console.log('Risk data update completed successfully');
 }
 
+// Update LLM Analysis section
+function updateLLMAnalysis(analysis) {
+    console.log('Updating LLM analysis:', analysis);
+    
+    try {
+        // Update Risk Assessment
+        const riskAssessment = document.getElementById('risk-assessment');
+        if (riskAssessment) {
+            riskAssessment.textContent = analysis.risk_assessment || 'ANALYZING...';
+            riskAssessment.className = 'badge bg-secondary';
+        }
+        
+        // Update Market Narrative
+        const marketNarrative = document.getElementById('market-narrative');
+        if (marketNarrative) {
+            marketNarrative.textContent = analysis.market_narrative || 'Analyzing current market conditions...';
+        }
+        
+        // Update Key Concerns
+        const keyConcerns = document.getElementById('key-concerns');
+        if (keyConcerns && analysis.key_concerns) {
+            keyConcerns.innerHTML = analysis.key_concerns.map(concern => `<li>${concern}</li>`).join('');
+        } else if (keyConcerns) {
+            keyConcerns.innerHTML = '<li>Loading analysis...</li>';
+        }
+        
+        // Update Specific Recommendations
+        const specificRecs = document.getElementById('specific-recommendations');
+        if (specificRecs && analysis.specific_recommendations) {
+            specificRecs.innerHTML = analysis.specific_recommendations.map(rec => `<li>${rec}</li>`).join('');
+        } else if (specificRecs) {
+            specificRecs.innerHTML = '<li>Loading recommendations...</li>';
+        }
+        
+        // Update Watchlist
+        const watchlist = document.getElementById('watchlist');
+        if (watchlist && analysis.watchlist) {
+            watchlist.innerHTML = analysis.watchlist.map(item => `<span class="badge bg-info me-1">${item}</span>`).join('');
+        } else if (watchlist) {
+            watchlist.innerHTML = '<span class="badge bg-secondary">Loading...</span>';
+        }
+        
+        // Update Probability Scenarios
+        const scenarios = document.getElementById('probability-scenarios');
+        if (scenarios && analysis.probability_scenarios) {
+            let scenarioHtml = '';
+            Object.entries(analysis.probability_scenarios).forEach(([scenario, probability]) => {
+                const percentage = Math.round(probability * 100);
+                const label = scenario.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+                scenarioHtml += `<div class="d-flex justify-content-between mb-1"><span>${label}</span><span class="badge bg-info">${percentage}%</span></div>`;
+            });
+            scenarios.innerHTML = scenarioHtml;
+        } else if (scenarios) {
+            scenarios.innerHTML = '<div class="text-muted">Loading scenarios...</div>';
+        }
+        
+        console.log('LLM analysis update completed');
+    } catch (error) {
+        console.error('Error updating LLM analysis:', error);
+    }
+}
+
 // Update LLM analysis display
 function updateLLMAnalysis(llmAnalysis) {
     if (!llmAnalysis) return;

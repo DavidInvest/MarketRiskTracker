@@ -111,6 +111,15 @@ def get_risk_data():
         db.session.add(new_score)
         db.session.commit()
         
+        # Get LLM analysis
+        try:
+            from services.llm_risk_analyzer import LLMRiskAnalyzer
+            llm_analyzer = LLMRiskAnalyzer()
+            llm_analysis = llm_analyzer.analyze_market_risks(market_data, sentiment_data, risk_score.get('components', {}))
+        except Exception as e:
+            logging.error(f"LLM analysis failed: {e}")
+            llm_analysis = None
+
         # Format response with proper structure for frontend
         response = {
             'success': True,
@@ -121,6 +130,7 @@ def get_risk_data():
             },
             'market_data': market_data,
             'sentiment_data': sentiment_data,
+            'llm_analysis': llm_analysis,
             'timestamp': datetime.utcnow().isoformat()
         }
         
@@ -181,6 +191,15 @@ def quick_data():
             sentiment_data = data_collector.collect_sentiment_data()
             risk_score = risk_calculator.calculate_risk_score(market_data, sentiment_data)
             
+            # Get LLM analysis for fresh data
+            try:
+                from services.llm_risk_analyzer import LLMRiskAnalyzer
+                llm_analyzer = LLMRiskAnalyzer()
+                llm_analysis = llm_analyzer.analyze_market_risks(market_data, sentiment_data, risk_score.get('components', {}))
+            except Exception as e:
+                logging.error(f"LLM analysis failed: {e}")
+                llm_analysis = None
+            
             return jsonify({
                 'success': True,
                 'risk_score': {
@@ -188,8 +207,18 @@ def quick_data():
                     'level': risk_score['level'],
                     'components': risk_score.get('components', {})
                 },
-                'market_data': market_data,
-                'sentiment_data': sentiment_data,
+                'market_data': {
+                    'spy': float(market_data.get('spy', 0)),
+                    'vix': float(market_data.get('vix', 0)),
+                    'dxy': float(market_data.get('dxy', 0)),
+                    'timestamp': datetime.utcnow().isoformat()
+                },
+                'sentiment_data': {
+                    'reddit': float(sentiment_data.get('reddit', 0)),
+                    'twitter': float(sentiment_data.get('twitter', 0)),
+                    'news': float(sentiment_data.get('news', 0))
+                },
+                'llm_analysis': llm_analysis,
                 'timestamp': datetime.utcnow().isoformat(),
                 'source': 'fresh'
             })
