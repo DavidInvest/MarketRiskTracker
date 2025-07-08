@@ -28,7 +28,12 @@ class MLRiskScorer:
         self.performance_metrics = {}
         try:
             from fredapi import Fred
-            self.fred = Fred()  # No API key needed for basic access
+            fred_api_key = os.environ.get('FRED_API_KEY')
+            if fred_api_key:
+                self.fred = Fred(api_key=fred_api_key)
+            else:
+                self.fred = None
+                logging.info("FRED API key not provided, using fallback economic data")
         except ImportError:
             self.fred = None
             logging.warning("FRED API not available, using fallback economic data")

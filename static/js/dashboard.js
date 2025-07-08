@@ -175,7 +175,7 @@ function updateRiskData(data) {
     document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
     
     // Get ML prediction
-    getMlPrediction(riskScore, marketData, sentimentData);
+    getMlPrediction(riskScore.value || riskScore, marketData, sentimentData);
 }
 
 // Update LLM analysis display
@@ -239,34 +239,70 @@ function updateLLMAnalysis(llmAnalysis) {
 
 // Get ML prediction
 function getMlPrediction(riskScore, marketData, sentimentData) {
-    const features = [
-        marketData.vix,
-        marketData.dxy,
-        marketData.spy,
-        sentimentData.reddit,
-        sentimentData.twitter,
-        sentimentData.news,
-        riskScore.value
-    ];
-    
     fetch('/api/ml_predict', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ features: features })
+        body: JSON.stringify({
+            market_data: marketData,
+            sentiment_data: sentimentData
+        })
     })
     .then(response => response.json())
     .then(data => {
-        if (data.success && data.prediction.length > 1) {
-            const crashProbability = data.prediction[1];
-            document.getElementById('crash-probability').textContent = (crashProbability * 100).toFixed(1) + '%';
-            document.getElementById('crash-progress').style.width = (crashProbability * 100) + '%';
+        if (data.success && data.predictions) {
+            const predictions = data.predictions;
+            
+            // Update crash probability displays
+            const crashProb1d = (predictions.crash_probability_1d * 100).toFixed(1);
+            document.getElementById('crash-probability').textContent = crashProb1d + '%';
+            document.getElementById('crash-progress').style.width = crashProb1d + '%';
+            
+            // Update any additional ML displays that might exist
+            updateMLDisplay('crash-1d', crashProb1d + '%');
+            updateMLDisplay('crash-7d', (predictions.crash_probability_7d * 100).toFixed(1) + '%');
+            updateMLDisplay('crash-30d', (predictions.crash_probability_30d * 100).toFixed(1) + '%');
+            updateMLDisplay('ml-risk', predictions.ml_risk_score.toFixed(1));
+            
+            // Remove loading states
+            document.querySelectorAll('[data-ml-loading]').forEach(el => {
+                el.textContent = el.getAttribute('data-ml-loading');
+                el.removeAttribute('data-ml-loading');
+            });
         }
     })
     .catch(error => {
         console.error('Error getting ML prediction:', error);
+        // Show error state
+        document.querySelectorAll('[data-ml-loading]').forEach(el => {
+            el.textContent = 'Error';
+            el.removeAttribute('data-ml-loading');
+        });
     });
+}
+
+function updateMLDisplay(selector, value) {
+    // Try multiple selector patterns to find the element
+    const patterns = [
+        selector,
+        `#${selector}`,
+        `.${selector}`,
+        `[data-ml="${selector}"]`,
+        `[id*="${selector}"]`,
+        `[class*="${selector}"]`
+    ];
+    
+    for (const pattern of patterns) {
+        const elements = document.querySelectorAll(pattern);
+        if (elements.length > 0) {
+            elements.forEach(el => el.textContent = value);
+            return;
+        }
+    }
+    
+    // Log if element not found for debugging
+    console.log(`ML display element not found for: ${selector}`);
 }
 
 // Update historical chart

@@ -217,12 +217,30 @@ def train_ml_model():
 def ml_predict():
     """API endpoint for ML predictions"""
     try:
+        from services.ml_risk_scorer import MLRiskScorer
+        
         data = request.get_json()
-        features = data.get('features', [])
+        market_data = data.get('market_data', {})
+        sentiment_data = data.get('sentiment_data', {})
         
-        prediction = ml_integration.predict(features)
+        # Initialize ML scorer and try to load models
+        ml_scorer = MLRiskScorer()
+        if not ml_scorer.load_models():
+            # If no models exist, train them quickly with synthetic data
+            logging.info("No ML models found, training new models...")
+            training_data = ml_scorer._generate_synthetic_training_data(200)
+            success = ml_scorer.train_models(training_data)
+            if not success:
+                return jsonify({'success': False, 'error': 'Failed to train ML models'})
         
-        return jsonify({'success': True, 'prediction': prediction.tolist()})
+        # Get ML predictions
+        predictions = ml_scorer.predict_market_risks(market_data, sentiment_data)
+        
+        return jsonify({
+            'success': True,
+            'predictions': predictions
+        })
+        
     except Exception as e:
         logging.error(f"Error making ML prediction: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
