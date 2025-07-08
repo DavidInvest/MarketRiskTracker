@@ -18,7 +18,10 @@ class DataCollector:
         self.reddit_client_secret = os.getenv('REDDIT_CLIENT_SECRET')
         
         # Twitter API
-        self.twitter_bearer = os.getenv('TWITTER_BEARER')
+        self.twitter_api_key = os.getenv('TWITTER_API_KEY')
+        self.twitter_api_secret = os.getenv('TWITTER_API_SECRET')
+        self.twitter_access_token = os.getenv('TWITTER_ACCESS_TOKEN')
+        self.twitter_access_token_secret = os.getenv('TWITTER_ACCESS_TOKEN_SECRET')
         
         self._setup_apis()
     
@@ -34,8 +37,13 @@ class DataCollector:
                 )
             
             # Twitter API
-            if self.twitter_bearer:
-                self.twitter_client = tweepy.Client(bearer_token=self.twitter_bearer)
+            if all([self.twitter_api_key, self.twitter_api_secret, self.twitter_access_token, self.twitter_access_token_secret]):
+                self.twitter_client = tweepy.Client(
+                    consumer_key=self.twitter_api_key,
+                    consumer_secret=self.twitter_api_secret,
+                    access_token=self.twitter_access_token,
+                    access_token_secret=self.twitter_access_token_secret
+                )
                 
         except Exception as e:
             logging.error(f"Error setting up APIs: {e}")
