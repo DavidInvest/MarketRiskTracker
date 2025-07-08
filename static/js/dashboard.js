@@ -101,20 +101,72 @@ function initializeCharts() {
 
 // Load initial data
 function loadInitialData() {
-    fetch('/api/risk_data')
-        .then(response => response.json())
+    console.log('Starting to load initial data...');
+    
+    // Try quick data first, then fallback to full data
+    fetch('/api/quick_data')
+        .then(response => {
+            console.log('Quick data response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
         .then(data => {
+            console.log('Received quick data:', data);
             if (data.success) {
                 updateRiskData(data);
+                updateConnectionStatus('Connected', 'success');
+                logUpdate('Data loaded successfully from ' + (data.source || 'API'));
+                
+                // If we got database data, also try to get fresh data in background
+                if (data.source === 'database') {
+                    loadFreshData();
+                }
+            } else {
+                console.error('Quick API returned error:', data.error || 'Unknown error');
+                // Fallback to full API
+                loadFreshData();
             }
         })
         .catch(error => {
-            console.error('Error loading initial data:', error);
-            logUpdate('Error loading initial data');
+            console.error('Error loading quick data:', error);
+            console.log('Falling back to fresh data...');
+            loadFreshData();
         });
     
     // Load historical data
     loadHistoricalData();
+}
+
+// Load fresh data from full API
+function loadFreshData() {
+    console.log('Loading fresh data...');
+    fetch('/api/risk_data')
+        .then(response => {
+            console.log('Fresh data response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Received fresh data:', data);
+            if (data.success) {
+                updateRiskData(data);
+                updateConnectionStatus('Connected', 'success');
+                logUpdate('Fresh data loaded successfully');
+            } else {
+                console.error('Fresh API returned error:', data.error || 'Unknown error');
+                updateConnectionStatus('API Error', 'warning');
+                logUpdate('API Error: ' + (data.error || 'Unknown'));
+            }
+        })
+        .catch(error => {
+            console.error('Error loading fresh data:', error);
+            updateConnectionStatus('Connection Error', 'danger');
+            logUpdate('Error loading fresh data: ' + error.message);
+        });
 }
 
 // Load historical data for chart
@@ -191,10 +243,15 @@ function updateRiskData(data) {
     }
     
     // Update last update time
-    document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+    const lastUpdateEl = document.getElementById('last-update');
+    if (lastUpdateEl) {
+        lastUpdateEl.textContent = new Date().toLocaleTimeString();
+    }
     
     // Get ML prediction
     getMlPrediction(riskScore.value || riskScore, marketData, sentimentData);
+    
+    console.log('Risk data update completed successfully');
 }
 
 // Update LLM analysis display

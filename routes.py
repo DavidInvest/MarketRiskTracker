@@ -129,6 +129,50 @@ def get_risk_data():
         logging.error(f"Error getting risk data: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
 
+@app.route('/api/quick_data')
+def quick_data():
+    """Quick data endpoint for dashboard - only essential data"""
+    try:
+        init_services()
+        
+        # Get only the latest database record instead of collecting new data
+        latest_score = RiskScore.query.order_by(RiskScore.timestamp.desc()).first()
+        
+        if latest_score:
+            return jsonify({
+                'success': True,
+                'risk_score': {
+                    'value': latest_score.score,
+                    'level': latest_score.level,
+                    'components': {}
+                },
+                'market_data': latest_score.market_data or {},
+                'sentiment_data': latest_score.sentiment_data or {},
+                'timestamp': latest_score.timestamp.isoformat(),
+                'source': 'database'
+            })
+        else:
+            # If no database records, collect fresh data
+            market_data = data_collector.collect_market_data()
+            sentiment_data = data_collector.collect_sentiment_data()
+            risk_score = risk_calculator.calculate_risk_score(market_data, sentiment_data)
+            
+            return jsonify({
+                'success': True,
+                'risk_score': {
+                    'value': risk_score['value'],
+                    'level': risk_score['level'],
+                    'components': risk_score.get('components', {})
+                },
+                'market_data': market_data,
+                'sentiment_data': sentiment_data,
+                'timestamp': datetime.utcnow().isoformat(),
+                'source': 'fresh'
+            })
+    except Exception as e:
+        logging.error(f"Error in quick_data: {e}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/test_data')
 def test_data():
     """Simple test endpoint to verify data collection"""
