@@ -324,6 +324,10 @@ class DataCollector:
     def _get_twitter_sentiment(self):
         """Get sentiment from Twitter"""
         try:
+            if not self.twitter_client:
+                logging.warning("Twitter client not initialized")
+                return 0.0
+                
             # Search for market-related tweets (without cashtag operator)
             tweets = self.twitter_client.search_recent_tweets(
                 query="SPY OR VIX OR \"stock market\" OR stocks",
@@ -331,7 +335,8 @@ class DataCollector:
                 tweet_fields=['public_metrics']
             )
             
-            if not tweets.data:
+            if not tweets or not tweets.data:
+                logging.warning("No Twitter data received")
                 return 0.0
             
             sentiment_scores = []
@@ -352,14 +357,41 @@ class DataCollector:
                         score -= 0.05
                 
                 score = max(-0.3, min(0.3, score))
-                
                 sentiment_scores.append(score)
             
-            return sum(sentiment_scores) / len(sentiment_scores) if sentiment_scores else 0.0
+            avg_sentiment = sum(sentiment_scores) / len(sentiment_scores) if sentiment_scores else 0.0
+            logging.info(f"Twitter sentiment calculated: {avg_sentiment} from {len(sentiment_scores)} tweets")
+            return avg_sentiment
             
         except Exception as e:
-            logging.error(f"Error getting Twitter sentiment: {e}")
-            return 0.0
+            error_msg = str(e)
+            if "429" in error_msg or "Too Many Requests" in error_msg:
+                logging.warning("Twitter API rate limit exceeded, using intelligent fallback")
+                # Use VIX level to estimate market sentiment since Twitter is rate limited
+                # Higher VIX = more fear = negative sentiment
+                try:
+                    from app import app
+                    with app.app_context():
+                        from models import RiskScore
+                        latest_risk = RiskScore.query.order_by(RiskScore.timestamp.desc()).first()
+                        if latest_risk and latest_risk.market_data:
+                            vix = latest_risk.market_data.get('vix', 20)
+                            # Convert VIX to sentiment: VIX 10-15 = positive, 15-25 = neutral, 25+ = negative
+                            if vix < 15:
+                                fallback_sentiment = 0.02  # Positive sentiment
+                            elif vix < 25:
+                                fallback_sentiment = -0.01  # Slightly negative
+                            else:
+                                fallback_sentiment = -0.03  # More negative
+                            logging.info(f"Twitter fallback sentiment based on VIX {vix}: {fallback_sentiment}")
+                            return fallback_sentiment
+                except:
+                    pass
+                # Final fallback
+                return -0.01
+            else:
+                logging.error(f"Error getting Twitter sentiment: {e}")
+                return 0.0
     
     def _get_news_sentiment(self):
         """Get sentiment from news articles"""
