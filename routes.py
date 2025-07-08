@@ -139,18 +139,42 @@ def quick_data():
         latest_score = RiskScore.query.order_by(RiskScore.timestamp.desc()).first()
         
         if latest_score:
-            return jsonify({
+            # Ensure proper data structure
+            market_data = latest_score.market_data or {}
+            sentiment_data = latest_score.sentiment_data or {}
+            
+            # Extract the essential values safely
+            spy_value = market_data.get('spy', 0)
+            vix_value = market_data.get('vix', 0)
+            dxy_value = market_data.get('dxy', 0)
+            
+            reddit_sentiment = sentiment_data.get('reddit', 0)
+            twitter_sentiment = sentiment_data.get('twitter', 0)
+            news_sentiment = sentiment_data.get('news', 0)
+            
+            response = {
                 'success': True,
                 'risk_score': {
-                    'value': latest_score.score,
+                    'value': float(latest_score.score),
                     'level': latest_score.level,
                     'components': {}
                 },
-                'market_data': latest_score.market_data or {},
-                'sentiment_data': latest_score.sentiment_data or {},
+                'market_data': {
+                    'spy': float(spy_value),
+                    'vix': float(vix_value),
+                    'dxy': float(dxy_value),
+                    'timestamp': latest_score.timestamp.isoformat()
+                },
+                'sentiment_data': {
+                    'reddit': float(reddit_sentiment),
+                    'twitter': float(twitter_sentiment),
+                    'news': float(news_sentiment)
+                },
                 'timestamp': latest_score.timestamp.isoformat(),
                 'source': 'database'
-            })
+            }
+            
+            return jsonify(response)
         else:
             # If no database records, collect fresh data
             market_data = data_collector.collect_market_data()

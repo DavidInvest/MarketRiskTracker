@@ -114,17 +114,17 @@ function loadInitialData() {
         })
         .then(data => {
             console.log('Received quick data:', data);
-            if (data.success) {
+            if (data && data.success) {
                 updateRiskData(data);
                 updateConnectionStatus('Connected', 'success');
                 logUpdate('Data loaded successfully from ' + (data.source || 'API'));
                 
                 // If we got database data, also try to get fresh data in background
                 if (data.source === 'database') {
-                    loadFreshData();
+                    setTimeout(() => loadFreshData(), 1000);
                 }
             } else {
-                console.error('Quick API returned error:', data.error || 'Unknown error');
+                console.error('Quick API returned error:', data ? data.error : 'No data received');
                 // Fallback to full API
                 loadFreshData();
             }
