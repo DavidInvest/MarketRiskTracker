@@ -6,6 +6,7 @@ import yfinance as yf
 import praw
 import tweepy
 from fredapi import Fred
+from pytrends.request import TrendReq
 from bs4 import BeautifulSoup
 from fredapi import Fred
 from bs4 import BeautifulSoup
@@ -29,6 +30,9 @@ class DataCollector:
         
         # FRED API (Federal Reserve Economic Data) - Free, unlimited
         self.fred_api_key = os.getenv('FRED_API_KEY')
+        
+        # Google Trends client (no API key needed)
+        self.pytrends = TrendReq(hl='en-US', tz=360)
         
         self._setup_apis()
     
@@ -278,14 +282,13 @@ class DataCollector:
             if hasattr(self, 'reddit'):
                 sentiment_data['reddit'] = self._get_reddit_sentiment()
             
-            # Twitter sentiment
-            if hasattr(self, 'twitter_client'):
-                sentiment_data['twitter'] = self._get_twitter_sentiment()
+            # Google Trends sentiment (replacing Twitter)
+            sentiment_data['twitter'] = self._get_google_trends_sentiment()
             
             # News sentiment
             sentiment_data['news'] = self._get_news_sentiment()
             
-            logging.info(f"Sentiment data collected: Reddit={sentiment_data['reddit']}, Twitter={sentiment_data['twitter']}, News={sentiment_data['news']}")
+            logging.info(f"Sentiment data collected: Reddit={sentiment_data['reddit']}, Google_Trends={sentiment_data['twitter']}, News={sentiment_data['news']}")
             return sentiment_data
             
         except Exception as e:
@@ -392,6 +395,46 @@ class DataCollector:
             else:
                 logging.error(f"Error getting Twitter sentiment: {e}")
                 return 0.0
+    
+    def _get_google_trends_sentiment(self):
+        """Get market sentiment from Google Trends data"""
+        try:
+            # Define market-related search terms
+            keywords = ['stock market crash', 'market volatility', 'recession', 'bull market', 'bear market']
+            
+            # Build payload for Google Trends
+            self.pytrends.build_payload(keywords, cat=0, timeframe='now 1-d', geo='US', gprop='')
+            
+            # Get interest over time
+            interest_data = self.pytrends.interest_over_time()
+            
+            if interest_data.empty:
+                return 0.0
+            
+            # Calculate sentiment score based on search patterns
+            latest_data = interest_data.iloc[-1]  # Most recent data point
+            
+            # Negative sentiment indicators (higher values = more fear)
+            negative_score = (
+                latest_data.get('stock market crash', 0) * 0.4 +
+                latest_data.get('market volatility', 0) * 0.3 +
+                latest_data.get('recession', 0) * 0.3 +
+                latest_data.get('bear market', 0) * 0.2
+            ) / 100  # Normalize to 0-1
+            
+            # Positive sentiment indicators
+            positive_score = latest_data.get('bull market', 0) / 100
+            
+            # Calculate final sentiment (-0.3 to +0.3 range)
+            sentiment = (positive_score - negative_score) * 0.3
+            
+            logging.info(f"Google Trends sentiment calculated: {sentiment:.3f}")
+            return max(-0.3, min(0.3, sentiment))
+            
+        except Exception as e:
+            logging.error(f"Error getting Google Trends sentiment: {e}")
+            # Return neutral sentiment on error
+            return 0.0
     
     def _get_news_sentiment(self):
         """Get sentiment from news articles"""
