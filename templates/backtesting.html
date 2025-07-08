@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block title %}Backtesting - Strategic Risk Monitor{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1>
+            <i data-feather="trending-up"></i>
+            Backtesting
+        </h1>
+        <p class="text-muted">Test your risk management strategies with historical data</p>
+    </div>
+</div>
+
+<!-- Backtest Configuration -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i data-feather="settings"></i>
+                    Backtest Configuration
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="backtest-form">
+                    <div class="mb-3">
+                        <label for="backtest-name" class="form-label">Backtest Name</label>
+                        <input type="text" class="form-control" id="backtest-name" value="Default Strategy">
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="start-date" class="form-label">Start Date</label>
+                                <input type="date" class="form-control" id="start-date" value="2020-01-01">
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="end-date" class="form-label">End Date</label>
+                                <input type="date" class="form-control" id="end-date" value="2023-12-31">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="initial-capital" class="form-label">Initial Capital ($)</label>
+                        <input type="number" class="form-control" id="initial-capital" value="100000" min="1000" step="1000">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="risk-threshold" class="form-label">Risk Threshold</label>
+                        <input type="range" class="form-range" id="risk-threshold" min="0" max="100" value="60">
+                        <div class="d-flex justify-content-between">
+                            <span>0</span>
+                            <span id="threshold-value">60</span>
+                            <span>100</span>
+                        </div>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success" id="run-backtest-btn">
+                        <i data-feather="play"></i>
+                        Run Backtest
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Stats -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i data-feather="bar-chart"></i>
+                    Performance Summary
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-6">
+                        <div class="text-center">
+                            <div class="h4" id="total-return">--</div>
+                            <small class="text-muted">Total Return</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center">
+                            <div class="h4" id="sharpe-ratio">--</div>
+                            <small class="text-muted">Sharpe Ratio</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-6">
+                        <div class="text-center">
+                            <div class="h4" id="max-drawdown">--</div>
+                            <small class="text-muted">Max Drawdown</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center">
+                            <div class="h4" id="num-trades">--</div>
+                            <small class="text-muted">Trades</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Backtest Results -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i data-feather="line-chart"></i>
+                    Portfolio Performance
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="portfolioChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Trade History -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i data-feather="list"></i>
+                    Trade History
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Action</th>
+                                <th>Price</th>
+                                <th>Risk Score</th>
+                            </tr>
+                        </thead>
+                        <tbody id="trades-table">
+                            <!-- Trades will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Previous Backtests -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i data-feather="archive"></i>
+                    Previous Backtests
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Date</th>
+                                <th>Return</th>
+                                <th>Sharpe</th>
+                                <th>Max DD</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in backtest_results %}
+                            <tr>
+                                <td>{{ result.name }}</td>
+                                <td>{{ result.timestamp.strftime('%Y-%m-%d') }}</td>
+                                <td>{{ "%.2f"|format(result.results.total_return * 100) }}%</td>
+                                <td>{{ "%.2f"|format(result.results.sharpe_ratio) }}</td>
+                                <td>{{ "%.2f"|format(result.results.max_drawdown * 100) }}%</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" onclick="loadBacktest({{ result.id }})">
+                                        Load
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/backtesting.js') }}"></script>
+{% endblock %}

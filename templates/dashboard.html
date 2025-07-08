@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Strategic Risk Monitor{% endblock %}
+
+{% block content %}
+<div class="row">
+    <!-- Risk Score Card -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i data-feather="alert-triangle"></i>
+                    Current Risk Score
+                </h5>
+            </div>
+            <div class="card-body text-center">
+                <div id="risk-score-display">
+                    <div class="display-4 mb-3" id="risk-score-value">
+                        {% if latest_score %}{{ latest_score.score }}{% else %}--{% endif %}
+                    </div>
+                    <div class="h5" id="risk-level">
+                        {% if latest_score %}{{ latest_score.level }}{% else %}UNKNOWN{% endif %}
+                    </div>
+                </div>
+                <div class="progress mt-3">
+                    <div class="progress-bar" role="progressbar" id="risk-progress" 
+                         style="width: {% if latest_score %}{{ latest_score.score }}{% else %}0{% endif %}%">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Market Data Card -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i data-feather="trending-up"></i>
+                    Market Data
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>SPY:</span>
+                            <span id="spy-value">--</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>VIX:</span>
+                            <span id="vix-value">--</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>DXY:</span>
+                            <span id="dxy-value">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sentiment Data Card -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i data-feather="message-circle"></i>
+                    Sentiment Analysis
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Reddit:</span>
+                            <span id="reddit-sentiment">--</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>Twitter:</span>
+                            <span id="twitter-sentiment">--</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>News:</span>
+                            <span id="news-sentiment">--</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Risk History Chart -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i data-feather="bar-chart-2"></i>
+                    Risk Score History
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="riskChart" height="100"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Risk Components -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i data-feather="pie-chart"></i>
+                    Risk Components
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="componentsChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- ML Prediction -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i data-feather="cpu"></i>
+                    ML Crash Prediction
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center">
+                    <div class="display-6 mb-3" id="crash-probability">--</div>
+                    <p class="text-muted">Crash Probability</p>
+                    <div class="progress mt-3">
+                        <div class="progress-bar bg-warning" role="progressbar" id="crash-progress" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Real-time Updates -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title">
+                    <i data-feather="activity"></i>
+                    Real-time Updates
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <div>
+                        <span class="badge bg-success" id="connection-status">Connecting...</span>
+                        <span class="text-muted ms-2" id="last-update">--</span>
+                    </div>
+                    <button class="btn btn-sm btn-outline-primary" onclick="requestUpdate()">
+                        <i data-feather="refresh-cw"></i> Update Now
+                    </button>
+                </div>
+                <div id="update-log" class="small text-muted" style="max-height: 200px; overflow-y: auto;">
+                    <!-- Updates will be displayed here -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}
