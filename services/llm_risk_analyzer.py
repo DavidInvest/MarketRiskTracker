@@ -7,8 +7,9 @@ from openai import OpenAI
 class LLMRiskAnalyzer:
     def __init__(self):
         self.openai_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-        # Using gpt-4o-mini as requested by user
+        # Try gpt-4o-mini first, fallback to gpt-3.5-turbo if not available
         self.model = "gpt-4o-mini"
+        self.fallback_model = "gpt-3.5-turbo"
         
     def analyze_market_risks(self, market_data, sentiment_data, risk_components):
         """Generate comprehensive risk analysis with actionable insights"""
@@ -44,16 +45,32 @@ class LLMRiskAnalyzer:
             Focus on actionable insights, not just descriptions. Be specific about dollar amounts, percentages, and timeframes.
             """
             
-            response = self.openai_client.chat.completions.create(
-                model=self.model,
-                messages=[
-                    {"role": "system", "content": "You are a professional risk analyst providing actionable market insights. Always respond in valid JSON format."},
-                    {"role": "user", "content": prompt}
-                ],
-                response_format={"type": "json_object"},
-                max_tokens=1500,
-                temperature=0.3
-            )
+            # Try primary model first, fallback if needed
+            try:
+                response = self.openai_client.chat.completions.create(
+                    model=self.model,
+                    messages=[
+                        {"role": "system", "content": "You are a professional risk analyst providing actionable market insights. Always respond in valid JSON format."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    response_format={"type": "json_object"},
+                    max_tokens=1500,
+                    temperature=0.3
+                )
+            except Exception as e:
+                if "model_not_found" in str(e) or "403" in str(e):
+                    logging.info(f"Primary model {self.model} not available, using fallback {self.fallback_model}")
+                    response = self.openai_client.chat.completions.create(
+                        model=self.fallback_model,
+                        messages=[
+                            {"role": "system", "content": "You are a professional risk analyst providing actionable market insights. Always respond in valid JSON format."},
+                            {"role": "user", "content": prompt}
+                        ],
+                        max_tokens=1500,
+                        temperature=0.3
+                    )
+                else:
+                    raise e
             
             analysis = json.loads(response.choices[0].message.content)
             analysis['timestamp'] = datetime.now().isoformat()
