@@ -7,9 +7,8 @@ from openai import OpenAI
 class LLMRiskAnalyzer:
     def __init__(self):
         self.client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-        # the newest OpenAI model is "gpt-4o" which was released May 13, 2024.
-        # do not change this unless explicitly requested by the user
-        self.model = "gpt-4o"
+        # Using gpt-4o-mini as requested by user
+        self.model = "gpt-4o-mini"
         
     def analyze_market_risks(self, market_data, sentiment_data, risk_components):
         """Generate comprehensive risk analysis with actionable insights"""
