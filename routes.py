@@ -24,14 +24,20 @@ ml_trainer = None
 
 def init_services():
     global dr_manager, data_collector, risk_calculator, alert_system, backtester, ml_integration, ml_trainer
-    if dr_manager is None:
-        dr_manager = DisasterRecoveryManager()
-        data_collector = DataCollector(dr_manager)
-        risk_calculator = RiskCalculator()
-        alert_system = AlertSystem()
-        backtester = Backtester()
-        ml_integration = MLIntegration()
-        ml_trainer = MLTrainer()
+    try:
+        if dr_manager is None:
+            logging.info("Initializing services...")
+            dr_manager = DisasterRecoveryManager()
+            data_collector = DataCollector(dr_manager)
+            risk_calculator = RiskCalculator()
+            alert_system = AlertSystem()
+            backtester = Backtester()
+            ml_integration = MLIntegration()
+            ml_trainer = MLTrainer()
+            logging.info("All services initialized successfully")
+    except Exception as e:
+        logging.error(f"Error initializing services: {e}")
+        raise
 
 @app.route('/')
 def dashboard():
@@ -88,6 +94,9 @@ def ml_management():
 def get_risk_data():
     """API endpoint to get latest risk data"""
     try:
+        # Ensure services are initialized
+        init_services()
+        
         market_data = data_collector.collect_market_data()
         sentiment_data = data_collector.collect_sentiment_data()
         risk_score = risk_calculator.calculate_risk_score(market_data, sentiment_data)
@@ -102,15 +111,37 @@ def get_risk_data():
         db.session.add(new_score)
         db.session.commit()
         
-        return jsonify({
+        # Format response with proper structure for frontend
+        response = {
             'success': True,
-            'risk_score': risk_score,
+            'risk_score': {
+                'value': risk_score['value'],
+                'level': risk_score['level'],
+                'components': risk_score.get('components', {})
+            },
             'market_data': market_data,
-            'sentiment_data': sentiment_data
-        })
+            'sentiment_data': sentiment_data,
+            'timestamp': datetime.utcnow().isoformat()
+        }
+        
+        return jsonify(response)
     except Exception as e:
         logging.error(f"Error getting risk data: {e}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+@app.route('/api/test_data')
+def test_data():
+    """Simple test endpoint to verify data collection"""
+    try:
+        init_services()
+        market_data = data_collector.collect_market_data()
+        return jsonify({
+            'success': True,
+            'market_data': market_data,
+            'message': 'Data collection working'
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)})
 
 @app.route('/api/historical_data')
 def get_historical_data():

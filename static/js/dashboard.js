@@ -133,29 +133,48 @@ function loadHistoricalData(days = 7) {
 
 // Update risk data display
 function updateRiskData(data) {
+    console.log('Updating risk data with:', data);
+    
     const riskScore = data.risk_score;
     const marketData = data.market_data;
     const sentimentData = data.sentiment_data;
     const llmAnalysis = data.llm_analysis;
     
+    if (!riskScore || !marketData || !sentimentData) {
+        console.error('Missing required data:', {riskScore, marketData, sentimentData});
+        return;
+    }
+    
     // Update risk score display
-    document.getElementById('risk-score-value').textContent = riskScore.value;
-    document.getElementById('risk-level').textContent = riskScore.level;
+    const riskScoreEl = document.getElementById('risk-score-value');
+    const riskLevelEl = document.getElementById('risk-level');
+    if (riskScoreEl) riskScoreEl.textContent = riskScore.value.toFixed(2);
+    if (riskLevelEl) riskLevelEl.textContent = riskScore.level;
     
     // Update progress bar
     const progressBar = document.getElementById('risk-progress');
-    progressBar.style.width = riskScore.value + '%';
-    progressBar.className = `progress-bar ${getRiskProgressClass(riskScore.level)}`;
+    if (progressBar) {
+        progressBar.style.width = riskScore.value + '%';
+        progressBar.className = `progress-bar ${getRiskProgressClass(riskScore.level)}`;
+    }
     
-    // Update market data
-    document.getElementById('spy-value').textContent = marketData.spy.toFixed(2);
-    document.getElementById('vix-value').textContent = marketData.vix.toFixed(2);
-    document.getElementById('dxy-value').textContent = marketData.dxy.toFixed(2);
+    // Update market data - with safe checking
+    const spyEl = document.getElementById('spy-value');
+    const vixEl = document.getElementById('vix-value');
+    const dxyEl = document.getElementById('dxy-value');
     
-    // Update sentiment data
-    document.getElementById('reddit-sentiment').textContent = sentimentData.reddit.toFixed(3);
-    document.getElementById('twitter-sentiment').textContent = sentimentData.twitter.toFixed(3);
-    document.getElementById('news-sentiment').textContent = sentimentData.news.toFixed(3);
+    if (spyEl && marketData.spy) spyEl.textContent = marketData.spy.toFixed(2);
+    if (vixEl && marketData.vix) vixEl.textContent = marketData.vix.toFixed(2);
+    if (dxyEl && marketData.dxy) dxyEl.textContent = marketData.dxy.toFixed(2);
+    
+    // Update sentiment data - with safe checking
+    const redditEl = document.getElementById('reddit-sentiment');
+    const twitterEl = document.getElementById('twitter-sentiment');
+    const newsEl = document.getElementById('news-sentiment');
+    
+    if (redditEl && sentimentData.reddit !== undefined) redditEl.textContent = sentimentData.reddit.toFixed(3);
+    if (twitterEl && sentimentData.twitter !== undefined) twitterEl.textContent = sentimentData.twitter.toFixed(3);
+    if (newsEl && sentimentData.news !== undefined) newsEl.textContent = sentimentData.news.toFixed(3);
     
     // Update LLM analysis section
     updateLLMAnalysis(llmAnalysis);
