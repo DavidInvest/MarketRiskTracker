@@ -43,14 +43,30 @@ class DataCollector:
                     user_agent="RiskMonitor/1.0"
                 )
             
-            # Twitter API
-            if all([self.twitter_api_key, self.twitter_api_secret, self.twitter_access_token, self.twitter_access_token_secret]):
-                self.twitter_client = tweepy.Client(
-                    consumer_key=self.twitter_api_key,
-                    consumer_secret=self.twitter_api_secret,
-                    access_token=self.twitter_access_token,
-                    access_token_secret=self.twitter_access_token_secret
-                )
+            # Twitter API - Try Bearer Token first (v2), fallback to v1.1 credentials
+            twitter_bearer_token = os.environ.get('TWITTER_BEARER_TOKEN')
+            if twitter_bearer_token:
+                try:
+                    self.twitter_client = tweepy.Client(bearer_token=twitter_bearer_token)
+                    logging.info("Twitter API configured with Bearer Token")
+                except Exception as e:
+                    logging.error(f"Error setting up Twitter Bearer Token: {e}")
+                    self.twitter_client = None
+            elif all([self.twitter_api_key, self.twitter_api_secret, self.twitter_access_token, self.twitter_access_token_secret]):
+                try:
+                    self.twitter_client = tweepy.Client(
+                        consumer_key=self.twitter_api_key,
+                        consumer_secret=self.twitter_api_secret,
+                        access_token=self.twitter_access_token,
+                        access_token_secret=self.twitter_access_token_secret
+                    )
+                    logging.info("Twitter API configured with OAuth 1.1")
+                except Exception as e:
+                    logging.error(f"Error setting up Twitter OAuth: {e}")
+                    self.twitter_client = None
+            else:
+                logging.warning("No valid Twitter credentials found")
+                self.twitter_client = None
             
             # FRED API - Free unlimited access to Federal Reserve data
             if self.fred_api_key:
@@ -308,9 +324,9 @@ class DataCollector:
     def _get_twitter_sentiment(self):
         """Get sentiment from Twitter"""
         try:
-            # Search for market-related tweets
+            # Search for market-related tweets (without cashtag operator)
             tweets = self.twitter_client.search_recent_tweets(
-                query="$SPY OR $VIX OR market OR stocks",
+                query="SPY OR VIX OR \"stock market\" OR stocks",
                 max_results=10,
                 tweet_fields=['public_metrics']
             )
@@ -323,12 +339,19 @@ class DataCollector:
                 text = tweet.text.lower()
                 score = 0
                 
-                # Simple sentiment analysis
-                if any(word in text for word in ['bull', 'up', 'gain', 'profit', 'buy']):
-                    score += 0.1
+                # Enhanced sentiment analysis
+                positive_words = ['bull', 'bullish', 'up', 'gain', 'profit', 'buy', 'rally', 'surge', 'strong', 'growth']
+                negative_words = ['bear', 'bearish', 'down', 'loss', 'sell', 'crash', 'drop', 'decline', 'weak', 'fall']
                 
-                if any(word in text for word in ['bear', 'down', 'loss', 'sell', 'crash']):
-                    score -= 0.1
+                for word in positive_words:
+                    if word in text:
+                        score += 0.05
+                
+                for word in negative_words:
+                    if word in text:
+                        score -= 0.05
+                
+                score = max(-0.3, min(0.3, score))
                 
                 sentiment_scores.append(score)
             
@@ -383,12 +406,21 @@ class DataCollector:
                     text = f"{title or ''} {description or ''}".lower()
                     
                     score = 0
-                    if any(word in text for word in ['bull', 'up', 'gain', 'profit', 'rise']):
-                        score += 0.1
+                    # Enhanced sentiment keywords for better detection
+                    positive_words = ['bull', 'bullish', 'up', 'gain', 'profit', 'rise', 'rally', 'surge', 'buy', 'strong', 'growth', 'optimistic', 'record', 'high']
+                    negative_words = ['bear', 'bearish', 'down', 'loss', 'fall', 'crash', 'sell', 'drop', 'decline', 'weak', 'recession', 'pessimistic', 'plunge', 'low']
                     
-                    if any(word in text for word in ['bear', 'down', 'loss', 'fall', 'crash']):
-                        score -= 0.1
+                    # Count sentiment words with more granular scoring
+                    for word in positive_words:
+                        if word in text:
+                            score += 0.05
                     
+                    for word in negative_words:
+                        if word in text:
+                            score -= 0.05
+                    
+                    # Cap the score and ensure we get some signal
+                    score = max(-0.3, min(0.3, score))
                     sentiment_scores.append(score)
                 
                 return sum(sentiment_scores) / len(sentiment_scores) if sentiment_scores else 0.0
