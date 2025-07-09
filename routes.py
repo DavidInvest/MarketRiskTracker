@@ -39,29 +39,30 @@ def init_services():
         logging.error(f"Error initializing services: {e}")
         raise
 
-@app.route('/')
-def dashboard():
-    """Main dashboard page"""
-    try:
-        init_services()
-        
-        # Get latest risk score
-        latest_score = RiskScore.query.order_by(RiskScore.timestamp.desc()).first()
-        
-        # Get recent scores for chart
-        recent_scores = RiskScore.query.order_by(RiskScore.timestamp.desc()).limit(50).all()
-        
-        return render_template('dashboard.html', 
-                             latest_score=latest_score,
-                             recent_scores=recent_scores)
-    except Exception as e:
-        logging.error(f"Error in dashboard route: {e}")
-        return f"""
-        <h1>Strategic Risk Monitor</h1>
-        <p>System is initializing... Dashboard will be available shortly.</p>
-        <p>Error: {str(e)}</p>
-        <p><a href="/health">Health Check</a> | <a href="/admin">Admin Panel</a></p>
-        """, 200
+# Dashboard moved to simple_routes.py - commented out to prevent conflicts
+# @app.route('/')
+# def dashboard():
+#     """Main dashboard page"""
+#     try:
+#         init_services()
+#         
+#         # Get latest risk score
+#         latest_score = RiskScore.query.order_by(RiskScore.timestamp.desc()).first()
+#         
+#         # Get recent scores for chart
+#         recent_scores = RiskScore.query.order_by(RiskScore.timestamp.desc()).limit(50).all()
+#         
+#         return render_template('dashboard.html', 
+#                              latest_score=latest_score,
+#                              recent_scores=recent_scores)
+#     except Exception as e:
+#         logging.error(f"Error in dashboard route: {e}")
+#         return f"""
+#         <h1>Strategic Risk Monitor</h1>
+#         <p>System is initializing... Dashboard will be available shortly.</p>
+#         <p>Error: {str(e)}</p>
+#         <p><a href="/health">Health Check</a> | <a href="/admin">Admin Panel</a></p>
+#         """, 200
 
 @app.route('/health')
 def health_check():

@@ -1,6 +1,7 @@
 from flask import jsonify, render_template
 from app import app
 from datetime import datetime
+from models import RiskScore
 
 @app.route('/api/simple_data')
 def simple_data():
@@ -86,6 +87,25 @@ def simple_historical():
         'count': len(data)
     })
 
+@app.route('/')
+def dashboard():
+    """Simple dashboard page - no service initialization"""
+    try:
+        # Get latest risk score
+        latest_score = RiskScore.query.order_by(RiskScore.timestamp.desc()).first()
+        
+        # Get recent scores for chart  
+        recent_scores = RiskScore.query.order_by(RiskScore.timestamp.desc()).limit(50).all()
+        
+        return render_template('dashboard.html', 
+                             latest_score=latest_score,
+                             recent_scores=recent_scores)
+    except Exception as e:
+        # Simple fallback dashboard
+        return render_template('dashboard.html', 
+                             latest_score=None,
+                             recent_scores=[])
+
 @app.route('/backtesting')
 def simple_backtesting():
     """Simple backtesting interface"""
@@ -99,27 +119,33 @@ def simple_ml_management():
 @app.route('/api/run_backtest', methods=['POST'])
 def simple_run_backtest():
     """Simple backtest API"""
-    from datetime import datetime
-    import random
-    
-    # Generate mock backtest results
-    results = {
-        'name': 'Risk Strategy Test',
-        'start_date': '2025-06-01',
-        'end_date': '2025-07-09',
-        'initial_capital': 100000,
-        'final_value': 100000 + random.randint(-5000, 15000),
-        'total_return': random.uniform(-5.0, 15.0),
-        'max_drawdown': random.uniform(-2.0, -8.0),
-        'sharpe_ratio': random.uniform(0.8, 2.5),
-        'trades': random.randint(45, 85)
-    }
-    
-    return jsonify({
-        'success': True,
-        'results': results,
-        'timestamp': datetime.utcnow().isoformat()
-    })
+    try:
+        from datetime import datetime
+        import random
+        
+        # Generate mock backtest results
+        results = {
+            'name': 'Risk Strategy Test',
+            'start_date': '2025-06-01',
+            'end_date': '2025-07-09',
+            'initial_capital': 100000,
+            'final_value': 100000 + random.randint(-5000, 15000),
+            'total_return': random.uniform(-5.0, 15.0),
+            'max_drawdown': random.uniform(-2.0, -8.0),
+            'sharpe_ratio': random.uniform(0.8, 2.5),
+            'trades': random.randint(45, 85)
+        }
+        
+        return jsonify({
+            'success': True,
+            'results': results,
+            'timestamp': datetime.utcnow().isoformat()
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 @app.route('/api/train_model', methods=['POST'])
 def simple_train_model():
