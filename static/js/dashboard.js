@@ -182,11 +182,18 @@ function loadHistoricalData(days = 7) {
         })
         .then(data => {
             console.log('Historical data response:', data);
-            if (data.success && data.data && data.data.length > 0) {
-                console.log('Updating chart with', data.data.length, 'data points');
+            console.log('Data type:', typeof data, 'Success:', data.success, 'Data length:', data.data ? data.data.length : 'undefined');
+            
+            if (data && data.success === true && data.data && Array.isArray(data.data) && data.data.length > 0) {
+                console.log('SUCCESS: Updating chart with', data.data.length, 'data points');
                 updateHistoricalChart(data.data);
             } else {
-                console.log('No historical data available:', data.error || 'Empty response');
+                console.log('FAILED: No historical data available');
+                console.log('- Success:', data.success);
+                console.log('- Data exists:', !!data.data);
+                console.log('- Data is array:', Array.isArray(data.data));
+                console.log('- Data length:', data.data ? data.data.length : 'N/A');
+                console.log('- Error:', data.error || 'No error message');
             }
         })
         .catch(error => {
