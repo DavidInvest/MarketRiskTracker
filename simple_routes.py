@@ -147,6 +147,12 @@ def simple_run_backtest():
             'error': str(e)
         }), 500
 
+@app.route('/test')
+def navigation_test():
+    """Simple navigation test page"""
+    with open('test_navigation.html', 'r') as f:
+        return f.read()
+
 @app.route('/api/train_model', methods=['POST'])
 def simple_train_model():
     """Simple ML training API"""

@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Navigation Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-link { display: block; margin: 10px 0; padding: 10px; background: #f0f0f0; text-decoration: none; color: black; }
+        .test-link:hover { background: #e0e0e0; }
+        .status { font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>Strategic Risk Monitor - Navigation Test</h1>
+    <p>Click each link to test navigation:</p>
+    
+    <a href="/" class="test-link">🏠 Dashboard</a>
+    <a href="/backtesting" class="test-link">📈 Backtesting</a>
+    <a href="/ml_management" class="test-link">🤖 ML Management</a>
+    <a href="/admin" class="test-link">⚙️ Admin</a>
+    
+    <div id="status" class="status"></div>
+    
+    <script>
+        // Test all routes on page load
+        async function testRoutes() {
+            const routes = ['/', '/backtesting', '/ml_management', '/admin'];
+            const status = document.getElementById('status');
+            status.innerHTML = 'Testing routes...<br>';
+            
+            for (let route of routes) {
+                try {
+                    const response = await fetch(route);
+                    const statusCode = response.status;
+                    const text = statusCode === 200 ? '✅' : '❌';
+                    status.innerHTML += `${text} ${route} - ${statusCode}<br>`;
+                } catch (error) {
+                    status.innerHTML += `❌ ${route} - Error: ${error.message}<br>`;
+                }
+            }
+        }
+        
+        // Run test when page loads
+        testRoutes();
+    </script>
+</body>
+</html>
