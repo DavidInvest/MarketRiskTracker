@@ -1,5 +1,7 @@
 from app import app, socketio
 from monitoring import start_monitoring_system
+import simple_routes  # noqa: F401
+import routes  # noqa: F401
 import threading
 import logging
 import os
