@@ -266,10 +266,10 @@ def get_historical_data():
         
         logging.info(f"Getting historical data for last {days} days from {start_date}")
         
-        # Use a more robust query with timeout protection
+        # Use a more efficient query with smaller limit
         scores = RiskScore.query.filter(
             RiskScore.timestamp >= start_date
-        ).order_by(RiskScore.timestamp.asc()).limit(1000).all()
+        ).order_by(RiskScore.timestamp.desc()).limit(50).all()
         
         logging.info(f"Found {len(scores)} historical records")
         

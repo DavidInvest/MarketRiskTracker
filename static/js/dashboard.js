@@ -171,15 +171,22 @@ function loadFreshData() {
 
 // Load historical data for chart
 function loadHistoricalData(days = 7) {
+    console.log('Starting to load historical data...');
     fetch(`/api/historical_data?days=${days}`)
-        .then(response => response.json())
+        .then(response => {
+            console.log('Historical data response status:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+            return response.json();
+        })
         .then(data => {
             console.log('Historical data response:', data);
             if (data.success && data.data && data.data.length > 0) {
                 console.log('Updating chart with', data.data.length, 'data points');
                 updateHistoricalChart(data.data);
             } else {
-                console.log('No historical data available or empty response');
+                console.log('No historical data available:', data.error || 'Empty response');
             }
         })
         .catch(error => {

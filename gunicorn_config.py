@@ -1,9 +1,9 @@
 bind = "0.0.0.0:5000"
-worker_class = "eventlet"
+worker_class = "sync"
 workers = 1
 worker_connections = 1000
-timeout = 300
+timeout = 30
 keepalive = 2
-max_requests = 1000
-max_requests_jitter = 50
-preload_app = True
+max_requests = 100
+max_requests_jitter = 10
+preload_app = False
