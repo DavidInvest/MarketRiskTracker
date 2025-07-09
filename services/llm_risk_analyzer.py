@@ -3,13 +3,20 @@ import json
 import logging
 from datetime import datetime
 from openai import OpenAI
+from google import genai
+from google.genai import types
 
 class LLMRiskAnalyzer:
     def __init__(self):
+        # Primary: Gemini 2.5 Flash Lite (4x cheaper than OpenAI)
+        self.gemini_client = genai.Client(api_key=os.environ.get("GEMINI_API_KEY"))
+        self.primary_model = "gemini-2.5-flash"
+        
+        # Backup: OpenAI gpt-4.1-nano
         self.openai_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-        # Use available models from your OpenAI account
-        self.model = "gpt-4.1-mini"
-        self.fallback_model = "gpt-4.1-nano-2025-04-14"
+        self.backup_model = "gpt-4.1-nano"
+        
+        self.use_gemini_primary = True  # Cost optimization flag
         
     def analyze_market_risks(self, market_data, sentiment_data, risk_components):
         """Generate comprehensive risk analysis with actionable insights"""
@@ -45,10 +52,17 @@ class LLMRiskAnalyzer:
             Focus on actionable insights, not just descriptions. Be specific about dollar amounts, percentages, and timeframes.
             """
             
-            # Try primary model first, fallback if needed
+            # Try Gemini first (4x cheaper), fallback to OpenAI  
+            if self.use_gemini_primary:
+                try:
+                    return self._analyze_with_gemini_direct(data_summary, risk_components)
+                except Exception as gemini_error:
+                    logging.warning(f"Gemini failed, using OpenAI backup: {gemini_error}")
+            
+            # Use OpenAI backup
             try:
                 response = self.openai_client.chat.completions.create(
-                    model=self.model,
+                    model=self.backup_model,
                     messages=[
                         {"role": "system", "content": "You are a professional risk analyst providing actionable market insights. Always respond in valid JSON format."},
                         {"role": "user", "content": prompt}
@@ -58,20 +72,7 @@ class LLMRiskAnalyzer:
                     temperature=0.3
                 )
             except Exception as e:
-                if "model_not_found" in str(e) or "403" in str(e):
-                    logging.info(f"Primary model {self.model} not available, using fallback {self.fallback_model}")
-                    # Remove response_format for fallback model compatibility
-                    response = self.openai_client.chat.completions.create(
-                        model=self.fallback_model,
-                        messages=[
-                            {"role": "system", "content": "You are a professional risk analyst providing actionable market insights. Always respond in valid JSON format."},
-                            {"role": "user", "content": prompt + "\n\nRespond with valid JSON only."}
-                        ],
-                        max_tokens=1500,
-                        temperature=0.3
-                    )
-                else:
-                    raise e
+                raise e
             
             analysis = json.loads(response.choices[0].message.content)
             analysis['timestamp'] = datetime.now().isoformat()
@@ -82,6 +83,59 @@ class LLMRiskAnalyzer:
         except Exception as e:
             logging.error(f"Error in LLM risk analysis: {e}")
             return self._fallback_analysis(risk_components)
+    
+    def _analyze_with_gemini_direct(self, data_summary, risk_components):
+        """Helper method for Gemini analysis"""
+        prompt = f"""
+        As a professional risk analyst, analyze this comprehensive market data and provide actionable insights:
+
+        MARKET DATA:
+        {data_summary}
+
+        CURRENT RISK COMPONENTS:
+        {self._format_risk_components(risk_components)}
+
+        Provide a comprehensive analysis in JSON format with:
+        1. "risk_assessment": Overall risk evaluation (LOW/MODERATE/HIGH/EXTREME)
+        2. "key_concerns": Top 3 immediate risk factors
+        3. "market_narrative": 2-3 sentence explanation of current market conditions
+        4. "specific_recommendations": Actionable hedging strategies
+        5. "watchlist": Key indicators to monitor closely
+        6. "probability_scenarios": Likelihood of different market outcomes
+        7. "time_horizon": Risk timeline (immediate/short-term/medium-term)
+        
+        Focus on actionable insights, not just descriptions. Be specific about dollar amounts, percentages, and timeframes.
+        """
+        
+        response = self.gemini_client.models.generate_content(
+            model=self.primary_model,
+            contents=prompt,
+            config=types.GenerateContentConfig(
+                system_instruction="You are a professional risk analyst providing actionable market insights. Always respond in valid JSON format.",
+                response_mime_type="application/json",
+                max_output_tokens=1500,
+                temperature=0.3
+            )
+        )
+        
+        analysis = json.loads(response.text)
+        analysis['timestamp'] = datetime.now().isoformat()
+        analysis['ai_model'] = 'Gemini 2.5 Flash'
+        logging.info("Gemini risk analysis completed successfully")
+        return analysis
+    
+    def _format_risk_components(self, risk_components):
+        """Format risk components for display"""
+        return f"""
+        - VIX Score: {risk_components.get('vix', 0)}/100
+        - Sentiment Score: {risk_components.get('sentiment', 0)}/100
+        - Dollar Strength: {risk_components.get('dxy', 0)}/100
+        - Momentum: {risk_components.get('momentum', 0)}/100
+        - Credit Risk: {risk_components.get('credit', 0)}/100
+        - Yield Curve: {risk_components.get('yield_curve', 0)}/100
+        - Options Flow: {risk_components.get('options', 0)}/100
+        - Economic Indicators: {risk_components.get('economic', 0)}/100
+        """
     
     def generate_alert_insights(self, risk_score, market_data, sentiment_data):
         """Generate intelligent alert messages with context"""
@@ -109,7 +163,7 @@ class LLMRiskAnalyzer:
             """
             
             response = self.openai_client.chat.completions.create(
-                model=self.model,
+                model=self.backup_model,
                 messages=[
                     {"role": "system", "content": "You are a risk analyst creating actionable alerts. Always respond in valid JSON format."},
                     {"role": "user", "content": prompt}
@@ -154,7 +208,7 @@ class LLMRiskAnalyzer:
             """
             
             response = self.openai_client.chat.completions.create(
-                model=self.model,
+                model=self.backup_model,
                 messages=[
                     {"role": "system", "content": "You are a portfolio risk analyst. Always respond in valid JSON format."},
                     {"role": "user", "content": prompt}
@@ -194,7 +248,7 @@ class LLMRiskAnalyzer:
             """
             
             response = self.openai_client.chat.completions.create(
-                model=self.model,
+                model=self.backup_model,
                 messages=[
                     {"role": "system", "content": "You are a market pattern analyst. Always respond in valid JSON format."},
                     {"role": "user", "content": prompt}
