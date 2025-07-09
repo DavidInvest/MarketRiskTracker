@@ -1,0 +1,306 @@
+/* Strategic Risk Monitor Dashboard - Professional UX Styles */
+
+/* WCAG-AA Compliant Colors */
+:root {
+    --risk-critical: #DC2626;  /* Improved contrast */
+    --risk-high: #F87171;     /* WCAG-AA compliant red */
+    --risk-moderate: #F59E0B; /* Amber for moderate */
+    --risk-low: #059669;      /* Emerald for low */
+    --primary-blue: #2563EB;  /* Professional blue */
+    --text-secondary: #6B7280; /* Improved contrast */
+    --card-bg: #FFFFFF;
+    --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+}
+
+[data-bs-theme=dark] {
+    --card-bg: #1F2937;
+    --text-secondary: #9CA3AF;
+    --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.3), 0 1px 2px 0 rgba(0, 0, 0, 0.2);
+}
+
+/* Risk Components Horizontal Stacked Bar */
+.risk-components-container {
+    position: relative;
+}
+
+.risk-component-bar {
+    display: flex;
+    height: 40px;
+    border-radius: 6px;
+    overflow: hidden;
+    border: 1px solid var(--bs-border-color);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.component-segment {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    cursor: pointer;
+    min-width: 60px;
+}
+
+.component-segment:hover {
+    opacity: 0.8;
+    transform: scale(1.02);
+}
+
+.vix-segment {
+    background: linear-gradient(135deg, var(--risk-critical), #EF4444);
+    color: white;
+}
+
+.sentiment-segment {
+    background: linear-gradient(135deg, var(--risk-moderate), #FBBF24);
+    color: white;
+}
+
+.dxy-segment {
+    background: linear-gradient(135deg, var(--primary-blue), #3B82F6);
+    color: white;
+}
+
+.momentum-segment {
+    background: linear-gradient(135deg, var(--risk-low), #10B981);
+    color: white;
+}
+
+.component-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Bullet Chart for Crash Probability */
+.bullet-chart-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.bullet-chart {
+    position: relative;
+    width: 100%;
+    height: 24px;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.bullet-background {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, 
+        var(--risk-low) 0%, 
+        var(--risk-low) 20%, 
+        var(--risk-moderate) 20%, 
+        var(--risk-moderate) 60%, 
+        var(--risk-critical) 60%, 
+        var(--risk-critical) 100%);
+    opacity: 0.2;
+}
+
+.bullet-measure {
+    position: absolute;
+    height: 100%;
+    background: var(--risk-critical);
+    border-radius: inherit;
+    transition: width 0.8s ease-out;
+    box-shadow: 0 2px 4px rgba(220, 38, 38, 0.3);
+}
+
+.bullet-markers {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    pointer-events: none;
+}
+
+.bullet-tick {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    text-shadow: 0 1px 2px rgba(255, 255, 255, 0.8);
+}
+
+/* Market and Sentiment Metric Cards */
+.market-metric, .sentiment-metric {
+    padding: 12px;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.market-metric:hover, .sentiment-metric:hover {
+    background-color: var(--bs-secondary-bg);
+    border-color: var(--bs-border-color);
+    transform: translateY(-1px);
+}
+
+/* Sentiment Badges */
+.sentiment-badge {
+    display: inline-block;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-align: center;
+    min-width: 60px;
+}
+
+.sentiment-positive {
+    background-color: var(--risk-low);
+    color: white;
+}
+
+.sentiment-neutral {
+    background-color: var(--text-secondary);
+    color: white;
+}
+
+.sentiment-negative {
+    background-color: var(--risk-critical);
+    color: white;
+}
+
+/* Risk Level Badge Styling */
+#risk-badge {
+    font-size: 1rem;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.risk-low {
+    background-color: var(--risk-low) !important;
+    color: white !important;
+}
+
+.risk-moderate {
+    background-color: var(--risk-moderate) !important;
+    color: white !important;
+}
+
+.risk-high {
+    background-color: var(--risk-critical) !important;
+    color: white !important;
+}
+
+/* Trend Indicators */
+.trend-up {
+    color: var(--risk-critical);
+}
+
+.trend-down {
+    color: var(--risk-low);
+}
+
+.trend-neutral {
+    color: var(--text-secondary);
+}
+
+/* Progress Bars */
+.progress-sm {
+    height: 6px;
+}
+
+.progress {
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+/* Card Enhancements */
+.card {
+    background: var(--card-bg);
+    box-shadow: var(--card-shadow);
+    border: 1px solid var(--bs-border-color);
+    transition: all 0.2s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+/* Skeleton Loading Animation */
+.skeleton {
+    background: linear-gradient(90deg, 
+        rgba(255, 255, 255, 0) 0%, 
+        rgba(255, 255, 255, 0.4) 50%, 
+        rgba(255, 255, 255, 0) 100%);
+    background-size: 200% 100%;
+    animation: loading 1.5s infinite;
+}
+
+@keyframes loading {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .component-label {
+        font-size: 0.75rem;
+    }
+    
+    .bullet-chart {
+        height: 20px;
+    }
+    
+    .risk-component-bar {
+        height: 32px;
+    }
+    
+    /* Single column layout on mobile */
+    .col-lg-8, .col-lg-4 {
+        flex: 1 1 100%;
+        max-width: 100%;
+    }
+}
+
+/* Accessibility Improvements */
+.btn-check:focus + .btn {
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+}
+
+/* Tooltip styling */
+.tooltip {
+    font-size: 0.875rem;
+}
+
+/* Animation for data updates */
+.data-update {
+    animation: pulse-highlight 0.6s ease-in-out;
+}
+
+@keyframes pulse-highlight {
+    0% { background-color: transparent; }
+    50% { background-color: rgba(37, 99, 235, 0.1); }
+    100% { background-color: transparent; }
+}
+
+/* Copy button styling */
+#copy-recommendations {
+    transition: all 0.2s ease;
+}
+
+#copy-recommendations:hover {
+    color: var(--primary-blue);
+    transform: scale(1.1);
+}
+
+/* Time range controls */
+#time-range-controls .btn {
+    font-size: 0.875rem;
+    padding: 6px 12px;
+}
+
+/* Chart container improvements */
+#riskChart {
+    max-height: 300px;
+}

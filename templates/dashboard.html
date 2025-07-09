@@ -3,89 +3,307 @@
 {% block title %}Dashboard - Strategic Risk Monitor{% endblock %}
 
 {% block content %}
+<!-- F-Pattern Layout: Critical Decision Info Left, Context Right -->
 <div class="row">
-    <!-- Risk Score Card -->
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">
-                    <i data-feather="alert-triangle"></i>
-                    Current Risk Score
-                </h5>
-            </div>
-            <div class="card-body text-center">
-                <div id="risk-score-display">
-                    <div class="display-4 mb-3" id="risk-score-value">
-                        {% if latest_score %}{{ latest_score.score }}{% else %}--{% endif %}
-                    </div>
-                    <div class="h5" id="risk-level">
-                        {% if latest_score %}{{ latest_score.level }}{% else %}UNKNOWN{% endif %}
-                    </div>
+    <!-- Left Column: Decision-Critical Information -->
+    <div class="col-lg-8">
+        <!-- Primary Risk Score Card -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0 pb-0">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="card-title mb-0 fw-bold">
+                        <i data-feather="shield" class="me-2"></i>
+                        Current Risk Assessment
+                    </h4>
+                    <span class="text-muted small" id="last-updated">
+                        <i data-feather="clock" class="me-1" style="width: 14px; height: 14px;"></i>
+                        <span id="update-timestamp">Loading...</span>
+                    </span>
                 </div>
-                <div class="progress mt-3">
-                    <div class="progress-bar" role="progressbar" id="risk-progress" 
-                         style="width: {% if latest_score %}{{ latest_score.score }}{% else %}0{% endif %}%">
+            </div>
+            <div class="card-body pt-2">
+                <div class="row align-items-center">
+                    <div class="col-md-4 text-center">
+                        <div class="display-2 fw-bold mb-2" id="risk-score-value" style="color: var(--bs-danger);">
+                            {% if latest_score %}{{ latest_score.score }}{% else %}--{% endif %}
+                        </div>
+                        <div class="h5 mb-3" id="risk-level">
+                            <span class="badge" id="risk-badge">
+                                {% if latest_score %}{{ latest_score.level }}{% else %}UNKNOWN{% endif %}
+                            </span>
+                        </div>
+                        <div class="small text-muted">
+                            <span id="trend-indicator" class="me-2">--</span>
+                            <span id="score-change">--</span>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <!-- Risk Components Horizontal Stacked Bar -->
+                        <h6 class="mb-3">Risk Components 
+                            <i data-feather="info" class="ms-1" style="width: 16px; height: 16px; cursor: pointer;" 
+                               data-bs-toggle="tooltip" title="VIX: Market volatility, Sentiment: Social/news sentiment, DXY: Dollar strength, Momentum: Price trends"></i>
+                        </h6>
+                        <div class="risk-components-container mb-3">
+                            <div class="risk-component-bar">
+                                <div class="component-segment vix-segment" id="vix-segment" style="width: 25%;">
+                                    <span class="component-label">VIX</span>
+                                </div>
+                                <div class="component-segment sentiment-segment" id="sentiment-segment" style="width: 25%;">
+                                    <span class="component-label">Sentiment</span>
+                                </div>
+                                <div class="component-segment dxy-segment" id="dxy-segment" style="width: 25%;">
+                                    <span class="component-label">DXY</span>
+                                </div>
+                                <div class="component-segment momentum-segment" id="momentum-segment" style="width: 25%;">
+                                    <span class="component-label">Momentum</span>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- ML Predictions Bullet Chart -->
+                        <div class="ml-predictions">
+                            <h6 class="mb-2">1-Day Crash Probability</h6>
+                            <div class="bullet-chart-container">
+                                <div class="bullet-chart">
+                                    <div class="bullet-background"></div>
+                                    <div class="bullet-measure" id="crash-probability-bar" style="width: 0%;"></div>
+                                    <div class="bullet-markers">
+                                        <span class="bullet-tick" style="left: 0%;">0%</span>
+                                        <span class="bullet-tick" style="left: 50%;">50%</span>
+                                        <span class="bullet-tick" style="left: 100%;">100%</span>
+                                    </div>
+                                </div>
+                                <span class="ms-3 fw-bold" id="crash-probability-value">--</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- AI Risk Narrative Card -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0 pb-0">
+                <h5 class="card-title mb-0">
+                    <i data-feather="brain" class="me-2"></i>
+                    AI Risk Analysis
+                </h5>
+            </div>
+            <div class="card-body pt-2">
+                <div class="mb-3">
+                    <p class="mb-2 fs-6" id="market-narrative">
+                        Current risk conditions are being analyzed...
+                    </p>
+                    <small class="text-muted" id="analysis-timestamp">--</small>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-primary mb-2">Key Concerns</h6>
+                        <ul class="list-unstyled small mb-3" id="key-concerns">
+                            <li>• Loading analysis...</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-success mb-2">
+                            Recommendations 
+                            <i data-feather="copy" class="ms-1" style="width: 14px; height: 14px; cursor: pointer;" 
+                               id="copy-recommendations" data-bs-toggle="tooltip" title="Copy to clipboard"></i>
+                        </h6>
+                        <ul class="list-unstyled small mb-3" id="recommendations">
+                            <li>• Loading recommendations...</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk Score History with Time Controls -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0 pb-0">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="card-title mb-0">
+                        <i data-feather="trending-up" class="me-2"></i>
+                        Risk Score History
+                    </h5>
+                    <div class="btn-group btn-group-sm" role="group" id="time-range-controls">
+                        <input type="radio" class="btn-check" name="timeRange" id="range1m" value="30">
+                        <label class="btn btn-outline-primary" for="range1m">1M</label>
+                        
+                        <input type="radio" class="btn-check" name="timeRange" id="range3m" value="90">
+                        <label class="btn btn-outline-primary" for="range3m">3M</label>
+                        
+                        <input type="radio" class="btn-check" name="timeRange" id="range6m" value="180">
+                        <label class="btn btn-outline-primary" for="range6m">6M</label>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body pt-2">
+                <div style="height: 300px;">
+                    <canvas id="riskChart"></canvas>
+                </div>
+            </div>
+        </div>
     </div>
-    
-    <!-- Market Data Card -->
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">
-                    <i data-feather="trending-up"></i>
+
+    <!-- Right Column: Context Information -->
+    <div class="col-lg-4">
+        <!-- Market Data Card -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0 pb-0">
+                <h5 class="card-title mb-0">
+                    <i data-feather="bar-chart-2" class="me-2"></i>
                     Market Data
                 </h5>
             </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-12">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>SPY:</span>
-                            <span id="spy-value">--</span>
+            <div class="card-body pt-2">
+                <div class="market-metric mb-3" data-bs-toggle="modal" data-bs-target="#spyModal" style="cursor: pointer;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="fw-semibold">SPY</span>
+                            <small class="text-muted d-block">S&P 500 ETF</small>
                         </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>VIX:</span>
-                            <span id="vix-value">--</span>
+                        <div class="text-end">
+                            <div class="fw-bold" id="spy-value">--</div>
+                            <div class="small" id="spy-change">--</div>
                         </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>DXY:</span>
-                            <span id="dxy-value">--</span>
+                    </div>
+                </div>
+                
+                <div class="market-metric mb-3" data-bs-toggle="modal" data-bs-target="#vixModal" style="cursor: pointer;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="fw-semibold">VIX</span>
+                            <small class="text-muted d-block">Volatility Index</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-bold" id="vix-value">--</div>
+                            <div class="small" id="vix-change">--</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="market-metric mb-0" data-bs-toggle="modal" data-bs-target="#dxyModal" style="cursor: pointer;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="fw-semibold">DXY</span>
+                            <small class="text-muted d-block">Dollar Index</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-bold" id="dxy-value">--</div>
+                            <div class="small" id="dxy-change">--</div>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
-    
-    <!-- Sentiment Data Card -->
-    <div class="col-md-4">
-        <div class="card">
-            <div class="card-header">
-                <h5 class="card-title">
-                    <i data-feather="message-circle"></i>
+
+        <!-- Sentiment Analysis Card -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0 pb-0">
+                <h5 class="card-title mb-0">
+                    <i data-feather="message-circle" class="me-2"></i>
                     Sentiment Analysis
                 </h5>
             </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-12">
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Reddit:</span>
-                            <span id="reddit-sentiment">--</span>
+            <div class="card-body pt-2">
+                <div class="sentiment-metric mb-3" data-bs-toggle="modal" data-bs-target="#redditModal" style="cursor: pointer;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="fw-semibold">Reddit</span>
+                            <small class="text-muted d-block">r/investing, r/stocks</small>
                         </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>Twitter:</span>
-                            <span id="twitter-sentiment">--</span>
-                        </div>
-                        <div class="d-flex justify-content-between mb-2">
-                            <span>News:</span>
-                            <span id="news-sentiment">--</span>
+                        <div class="text-end">
+                            <div class="sentiment-badge" id="reddit-badge">--</div>
+                            <div class="small" id="reddit-sentiment">--</div>
                         </div>
                     </div>
+                </div>
+                
+                <div class="sentiment-metric mb-3" data-bs-toggle="modal" data-bs-target="#twitterModal" style="cursor: pointer;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="fw-semibold">Google Trends</span>
+                            <small class="text-muted d-block">Market search patterns</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="sentiment-badge" id="twitter-badge">--</div>
+                            <div class="small" id="twitter-sentiment">--</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="sentiment-metric mb-0" data-bs-toggle="modal" data-bs-target="#newsModal" style="cursor: pointer;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="fw-semibold">News</span>
+                            <small class="text-muted d-block">Financial media</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="sentiment-badge" id="news-badge">--</div>
+                            <div class="small" id="news-sentiment">--</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick ML Insights -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0 pb-0">
+                <h5 class="card-title mb-0">
+                    <i data-feather="cpu" class="me-2"></i>
+                    ML Predictions
+                </h5>
+            </div>
+            <div class="card-body pt-2">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small">7-Day Risk</span>
+                        <span class="fw-bold" id="ml-7d-risk">--</span>
+                    </div>
+                    <div class="progress progress-sm">
+                        <div class="progress-bar" id="ml-7d-bar" style="width: 0%;"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <span class="small">30-Day Risk</span>
+                        <span class="fw-bold" id="ml-30d-risk">--</span>
+                    </div>
+                    <div class="progress progress-sm">
+                        <div class="progress-bar bg-warning" id="ml-30d-bar" style="width: 0%;"></div>
+                    </div>
+                </div>
+                
+                <div class="text-center">
+                    <small class="text-muted" id="ml-confidence">
+                        Model confidence: --
+                    </small>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Status -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0 pb-0">
+                <h6 class="card-title mb-0">
+                    <i data-feather="activity" class="me-2"></i>
+                    System Status
+                </h6>
+            </div>
+            <div class="card-body pt-2">
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small">Connection</span>
+                    <span class="badge bg-success" id="connection-status">Connected</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span class="small">Data Sources</span>
+                    <span class="badge bg-info" id="data-sources">3/3 Active</span>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                    <span class="small">Last Update</span>
+                    <span class="small text-muted" id="system-last-update">--</span>
                 </div>
             </div>
         </div>
@@ -249,5 +467,5 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard-professional.js') }}"></script>
 {% endblock %}

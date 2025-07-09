@@ -1,45 +1,85 @@
-// Dashboard JavaScript for Strategic Risk Monitor
+// Professional Strategic Risk Monitor Dashboard
 let socket;
 let riskChart;
-let componentsChart;
+let lastDataUpdate = null;
+let previousRiskScore = null;
 
-// Initialize dashboard
+// Initialize dashboard with professional UX features
 document.addEventListener('DOMContentLoaded', function() {
     initializeSocket();
     initializeCharts();
+    initializeInteractions();
     loadInitialData();
+    
+    // Initialize Bootstrap tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function(tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
     
     // Auto-refresh every 30 seconds
     setInterval(requestUpdate, 30000);
+    
+    // Default to 1M view
+    document.getElementById('range1m').checked = true;
 });
 
-// Initialize Socket.IO connection
+// Initialize professional interactions
+function initializeInteractions() {
+    // Copy recommendations functionality
+    document.getElementById('copy-recommendations').addEventListener('click', function() {
+        const recommendations = document.getElementById('recommendations').innerText;
+        navigator.clipboard.writeText(recommendations).then(() => {
+            showNotification('Recommendations copied to clipboard', 'success');
+        }).catch(() => {
+            showNotification('Failed to copy recommendations', 'error');
+        });
+    });
+    
+    // Time range controls
+    document.querySelectorAll('input[name="timeRange"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.checked) {
+                loadHistoricalData(parseInt(this.value));
+            }
+        });
+    });
+    
+    // Component hover effects
+    document.querySelectorAll('.component-segment').forEach(segment => {
+        segment.addEventListener('mouseenter', function() {
+            showComponentTooltip(this);
+        });
+    });
+}
+
+// Initialize enhanced Socket.IO connection
 function initializeSocket() {
     socket = io();
     
     socket.on('connect', function() {
         updateConnectionStatus('Connected', 'success');
-        logUpdate('Connected to server');
+        console.log('Professional dashboard connected');
     });
     
     socket.on('disconnect', function() {
         updateConnectionStatus('Disconnected', 'danger');
-        logUpdate('Disconnected from server');
+        console.log('Dashboard disconnected');
     });
     
     socket.on('risk_update', function(data) {
         updateRiskData(data);
-        logUpdate(`Risk update received: ${data.risk_score.level} (${data.risk_score.value})`);
+        console.log(`Risk update: ${data.risk_score.level} (${data.risk_score.value})`);
     });
     
     socket.on('error', function(error) {
-        logUpdate(`Error: ${error.message}`);
+        console.error(`Dashboard error: ${error.message}`);
     });
 }
 
-// Initialize charts
+// Initialize professional charts with enhanced features
 function initializeCharts() {
-    // Risk history chart
+    // Enhanced Risk History Chart with moving average
     const riskCtx = document.getElementById('riskChart').getContext('2d');
     riskChart = new Chart(riskCtx, {
         type: 'line',
@@ -48,51 +88,78 @@ function initializeCharts() {
             datasets: [{
                 label: 'Risk Score',
                 data: [],
-                borderColor: '#dc3545',
-                backgroundColor: 'rgba(220, 53, 69, 0.1)',
+                borderColor: '#DC2626',
+                backgroundColor: 'rgba(220, 38, 38, 0.1)',
                 fill: true,
-                tension: 0.4
+                tension: 0.4,
+                pointRadius: 3,
+                pointHoverRadius: 6,
+                borderWidth: 2
+            }, {
+                label: '7-Day Average',
+                data: [],
+                borderColor: '#6B7280',
+                backgroundColor: 'transparent',
+                borderDash: [5, 5],
+                fill: false,
+                tension: 0.4,
+                pointRadius: 0,
+                borderWidth: 1
             }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
             scales: {
                 y: {
                     beginAtZero: true,
-                    max: 100
+                    max: 100,
+                    grid: {
+                        color: 'rgba(75, 85, 99, 0.1)'
+                    },
+                    ticks: {
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    }
+                },
+                x: {
+                    grid: {
+                        color: 'rgba(75, 85, 99, 0.1)'
+                    }
                 }
             },
             plugins: {
                 legend: {
-                    display: true
+                    display: true,
+                    position: 'top',
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#fff',
+                    bodyColor: '#fff',
+                    borderColor: '#374151',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    displayColors: true,
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + '%';
+                        }
+                    }
                 }
-            }
-        }
-    });
-    
-    // Components chart
-    const componentsCtx = document.getElementById('componentsChart').getContext('2d');
-    componentsChart = new Chart(componentsCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['VIX', 'Sentiment', 'DXY', 'Momentum'],
-            datasets: [{
-                data: [0, 0, 0, 0],
-                backgroundColor: [
-                    '#dc3545',
-                    '#ffc107',
-                    '#17a2b8',
-                    '#28a745'
-                ]
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom'
+            },
+            elements: {
+                point: {
+                    hoverBorderWidth: 3
                 }
             }
         }
