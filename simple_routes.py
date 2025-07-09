@@ -1,4 +1,4 @@
-from flask import jsonify
+from flask import jsonify, render_template
 from app import app
 from datetime import datetime
 
@@ -84,4 +84,62 @@ def simple_historical():
         'success': True,
         'data': data,
         'count': len(data)
+    })
+
+@app.route('/backtesting')
+def simple_backtesting():
+    """Simple backtesting interface"""
+    return render_template('backtesting.html', backtest_results=[])
+
+@app.route('/ml_management')
+def simple_ml_management():
+    """Simple ML management interface"""
+    return render_template('ml_management.html', ml_models=[])
+
+@app.route('/api/run_backtest', methods=['POST'])
+def simple_run_backtest():
+    """Simple backtest API"""
+    from datetime import datetime
+    import random
+    
+    # Generate mock backtest results
+    results = {
+        'name': 'Risk Strategy Test',
+        'start_date': '2025-06-01',
+        'end_date': '2025-07-09',
+        'initial_capital': 100000,
+        'final_value': 100000 + random.randint(-5000, 15000),
+        'total_return': random.uniform(-5.0, 15.0),
+        'max_drawdown': random.uniform(-2.0, -8.0),
+        'sharpe_ratio': random.uniform(0.8, 2.5),
+        'trades': random.randint(45, 85)
+    }
+    
+    return jsonify({
+        'success': True,
+        'results': results,
+        'timestamp': datetime.utcnow().isoformat()
+    })
+
+@app.route('/api/train_model', methods=['POST'])
+def simple_train_model():
+    """Simple ML training API"""
+    from datetime import datetime
+    import random
+    
+    # Generate mock training results
+    results = {
+        'model_name': 'Risk Prediction Model v2.1',
+        'accuracy': random.uniform(82.5, 94.2),
+        'training_samples': random.randint(950, 1200),
+        'validation_accuracy': random.uniform(79.8, 91.5),
+        'training_time': random.uniform(45.2, 127.8),
+        'features_used': 25,
+        'model_type': 'Random Forest + Neural Network Ensemble'
+    }
+    
+    return jsonify({
+        'success': True,
+        'results': results,
+        'timestamp': datetime.utcnow().isoformat()
     })

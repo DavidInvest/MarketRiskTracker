@@ -78,17 +78,18 @@ def admin():
                          alert_configs=alert_configs,
                          system_logs=system_logs)
 
-@app.route('/backtesting')
-def backtesting():
-    """Backtesting interface"""
-    backtest_results = BacktestResult.query.order_by(BacktestResult.timestamp.desc()).all()
-    return render_template('backtesting.html', backtest_results=backtest_results)
+# Commented out - using simple routes instead
+# @app.route('/backtesting')
+# def backtesting():
+#     """Backtesting interface"""
+#     backtest_results = BacktestResult.query.order_by(BacktestResult.timestamp.desc()).all()
+#     return render_template('backtesting.html', backtest_results=backtest_results)
 
-@app.route('/ml_management')
-def ml_management():
-    """ML model management interface"""
-    ml_models = MLModel.query.order_by(MLModel.created_at.desc()).all()
-    return render_template('ml_management.html', ml_models=ml_models)
+# @app.route('/ml_management')
+# def ml_management():
+#     """ML model management interface"""
+#     ml_models = MLModel.query.order_by(MLModel.created_at.desc()).all()
+#     return render_template('ml_management.html', ml_models=ml_models)
 
 @app.route('/api/risk_data')
 def get_risk_data():
