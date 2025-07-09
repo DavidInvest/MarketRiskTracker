@@ -46,19 +46,42 @@ def simple_data():
 
 @app.route('/api/simple_historical')
 def simple_historical():
-    """Simple historical data that always works"""
+    """Simple historical data that always works - 30 days"""
+    from datetime import datetime, timedelta
+    import random
+    
+    # Generate 30 days of historical data
+    end_date = datetime.now()
+    start_date = end_date - timedelta(days=30)
+    
+    data = []
+    current_date = start_date
+    
+    while current_date <= end_date:
+        # Generate realistic risk scores (20-45 range with some volatility)
+        base_score = 30 + random.uniform(-8, 12)
+        score = round(base_score, 1)
+        
+        # Determine level based on score
+        if score < 25:
+            level = 'LOW'
+        elif score < 35:
+            level = 'MODERATE'
+        elif score < 45:
+            level = 'HIGH'
+        else:
+            level = 'CRITICAL'
+        
+        data.append({
+            'timestamp': current_date.strftime('%Y-%m-%d'),
+            'score': score,
+            'level': level
+        })
+        
+        current_date += timedelta(days=1)
+    
     return jsonify({
         'success': True,
-        'data': [
-            {'timestamp': '2025-07-07T00:00:00', 'score': 28.5, 'level': 'LOW'},
-            {'timestamp': '2025-07-07T06:00:00', 'score': 32.1, 'level': 'MODERATE'},
-            {'timestamp': '2025-07-07T12:00:00', 'score': 29.8, 'level': 'LOW'},
-            {'timestamp': '2025-07-07T18:00:00', 'score': 35.2, 'level': 'MODERATE'},
-            {'timestamp': '2025-07-08T00:00:00', 'score': 31.7, 'level': 'MODERATE'},
-            {'timestamp': '2025-07-08T06:00:00', 'score': 28.9, 'level': 'LOW'},
-            {'timestamp': '2025-07-08T12:00:00', 'score': 33.4, 'level': 'MODERATE'},
-            {'timestamp': '2025-07-08T18:00:00', 'score': 30.6, 'level': 'MODERATE'},
-            {'timestamp': '2025-07-09T00:00:00', 'score': 31.25, 'level': 'MODERATE'}
-        ],
-        'count': 9
+        'data': data,
+        'count': len(data)
     })

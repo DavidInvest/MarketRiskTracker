@@ -170,9 +170,9 @@ function loadFreshData() {
 }
 
 // Load historical data for chart
-function loadHistoricalData(days = 7) {
+function loadHistoricalData(days = 30) {
     console.log('Starting to load historical data...');
-    fetch(`/api/historical_data?days=${days}`)
+    fetch(`/api/simple_historical`)
         .then(response => {
             console.log('Historical data response status:', response.status);
             if (!response.ok) {
@@ -474,20 +474,25 @@ function updateHistoricalChart(data) {
     
     console.log('Processing', data.length, 'records for chart');
     
+    // Format dates for 30-day view - show only dates, no times
     const labels = data.map(item => {
         const date = new Date(item.timestamp);
-        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+        return date.toLocaleDateString('en-US', { 
+            month: 'short', 
+            day: 'numeric' 
+        });
     });
     const scores = data.map(item => parseFloat(item.score) || 0);
     
-    console.log('Chart labels:', labels.slice(0, 5)); // Show first 5 for debugging
-    console.log('Chart scores:', scores.slice(0, 5)); // Show first 5 for debugging
+    console.log('Chart labels (first 5):', labels.slice(0, 5)); // Show first 5 for debugging
+    console.log('Chart scores (first 5):', scores.slice(0, 5)); // Show first 5 for debugging
+    console.log('Total data points:', labels.length);
     
     riskChart.data.labels = labels;
     riskChart.data.datasets[0].data = scores;
     riskChart.update();
     
-    console.log('Historical chart updated successfully');
+    console.log('Historical chart updated successfully with', labels.length, 'days of data');
 }
 
 // Get risk progress class
