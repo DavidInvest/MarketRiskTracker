@@ -174,8 +174,12 @@ function loadHistoricalData(days = 7) {
     fetch(`/api/historical_data?days=${days}`)
         .then(response => response.json())
         .then(data => {
-            if (data.success) {
+            console.log('Historical data response:', data);
+            if (data.success && data.data && data.data.length > 0) {
+                console.log('Updating chart with', data.data.length, 'data points');
                 updateHistoricalChart(data.data);
+            } else {
+                console.log('No historical data available or empty response');
             }
         })
         .catch(error => {
@@ -444,12 +448,32 @@ function updateMLDisplay(selector, value) {
 
 // Update historical chart
 function updateHistoricalChart(data) {
-    const labels = data.map(item => new Date(item.timestamp).toLocaleDateString());
-    const scores = data.map(item => item.score);
+    if (!riskChart) {
+        console.error('Risk chart not initialized');
+        return;
+    }
+    
+    if (!data || data.length === 0) {
+        console.log('No data to update chart');
+        return;
+    }
+    
+    console.log('Processing', data.length, 'records for chart');
+    
+    const labels = data.map(item => {
+        const date = new Date(item.timestamp);
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    });
+    const scores = data.map(item => parseFloat(item.score) || 0);
+    
+    console.log('Chart labels:', labels.slice(0, 5)); // Show first 5 for debugging
+    console.log('Chart scores:', scores.slice(0, 5)); // Show first 5 for debugging
     
     riskChart.data.labels = labels;
     riskChart.data.datasets[0].data = scores;
     riskChart.update();
+    
+    console.log('Historical chart updated successfully');
 }
 
 // Get risk progress class
