@@ -183,7 +183,12 @@ def quick_data():
                 'risk_score': {
                     'value': float(latest_score.score),
                     'level': latest_score.level,
-                    'components': {}
+                    'components': {
+                        'vix': 20.0,
+                        'sentiment': 25.0,
+                        'dxy': 30.0,
+                        'momentum': 25.0
+                    }
                 },
                 'market_data': {
                     'spy': float(spy_value),
