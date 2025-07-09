@@ -264,22 +264,35 @@ def get_historical_data():
         days = request.args.get('days', 7, type=int)
         start_date = datetime.utcnow() - timedelta(days=days)
         
+        logging.info(f"Getting historical data for last {days} days from {start_date}")
+        
+        # Use a more robust query with timeout protection
         scores = RiskScore.query.filter(
             RiskScore.timestamp >= start_date
-        ).order_by(RiskScore.timestamp.asc()).all()
+        ).order_by(RiskScore.timestamp.asc()).limit(1000).all()
         
-        data = [{
-            'timestamp': score.timestamp.isoformat(),
-            'score': score.score,
-            'level': score.level,
-            'market_data': score.market_data,
-            'sentiment_data': score.sentiment_data
-        } for score in scores]
+        logging.info(f"Found {len(scores)} historical records")
         
-        return jsonify({'success': True, 'data': data})
+        data = []
+        for score in scores:
+            try:
+                data.append({
+                    'timestamp': score.timestamp.isoformat() if score.timestamp else '',
+                    'score': float(score.score) if score.score is not None else 0,
+                    'level': score.level or 'UNKNOWN',
+                    'market_data': score.market_data or {},
+                    'sentiment_data': score.sentiment_data or {}
+                })
+            except Exception as record_error:
+                logging.warning(f"Skipping corrupted record: {record_error}")
+                continue
+        
+        logging.info(f"Successfully processed {len(data)} records for API response")
+        return jsonify({'success': True, 'data': data, 'count': len(data)})
+        
     except Exception as e:
         logging.error(f"Error getting historical data: {e}")
-        return jsonify({'success': False, 'error': str(e)}), 500
+        return jsonify({'success': False, 'error': str(e), 'data': []}), 500
 
 @app.route('/api/update_alert_config', methods=['POST'])
 def update_alert_config():
